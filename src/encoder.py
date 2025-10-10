@@ -1,4 +1,4 @@
-import bitarray
+import bitarray as ba
 import cv2
 import numpy as np
 
@@ -6,11 +6,15 @@ f = open("testData")
 data = f.read()
 f.close()
 
-ba = bitarray.bitarray()
 byteData = data.encode("utf-8")
-ba.frombytes(byteData)
+bitData = ba.bitarray()
+bitData.frombytes(byteData)
 
-bits = np.unpackbits(ba)
-image = np.resize(np.pad(bits, (0,25 * 25 - len(bits))), (25, 25))
+length = np.array(len(bitData), dtype="uint16")
+bitLength = ba.bitarray()
+bitLength.frombytes(length) 
+
+bits = np.concatenate([np.unpackbits(bitLength), np.unpackbits(bitData)])
+image = np.resize(np.pad(bits, (0,25 * 25 - length)), (25, 25))
 
 cv2.imwrite('../output/output.png', image * 255)
