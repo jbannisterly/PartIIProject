@@ -6,7 +6,7 @@
 using namespace cv;
 
 int main(){
-    char* message = "Hello World\0";
+    char* message = "Hello World\n";
     uint16_t length = strlen(message);
 
     uint8_t* byteData = new uint8_t[length + 2];
