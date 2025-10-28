@@ -63,8 +63,13 @@ BarcodeLayout* GetBarcode(){
     memset(barcode->data, 0, size * 3);
     memset(barcode->mask, 255, size);
 
-    int posX[3] = {0, 17, 0};
-    int posY[3] = {0, 17, 17};
+    int posX[3] = {0, 18, 0};
+    int posY[3] = {0, 0, 18};
+
+    DrawSquare(*barcode, 255, 0, 0, 25, 8);
+    DrawSquare(*barcode, 255, 17, 0, 25, 8);
+    DrawSquare(*barcode, 255, 0, 17, 25, 8);
+
 
     for (int i = 0; i < 3; i++){
         DrawSquare(*barcode, 0, posX[i], posY[i], 25, 7);
