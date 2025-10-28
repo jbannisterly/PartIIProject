@@ -65,7 +65,7 @@ uint8_t* PixelsToBarcode(PixelData* pixels){
 
 
 int main(){
-    char* message = "Hello World\n";
+    char* message = "Hello World 2\n";
 
     uint8_t* byteData = EncodeMessage(message);
     PixelData* pixelData = MessageToPixels(byteData, strlen(message) + 2);

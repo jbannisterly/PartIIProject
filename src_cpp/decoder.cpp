@@ -1,7 +1,23 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include "barcode_layout.hpp"
 
 using namespace cv;
+
+uint8_t* BarcodeToPixels(uint8_t* barcode, int barcodeSize){
+    BarcodeLayout* barcodeLayout = GetBarcode();
+    uint8_t* pixels = (uint8_t*)malloc(sizeof(uint8_t) * barcodeSize * 3);
+    int pixelCounter = 0;
+
+    for (int i = 0; i < barcodeSize; i++){
+        if (barcodeLayout->mask[i] > 0){
+            memcpy(pixels + pixelCounter, barcode + i * 3, 3);
+            pixelCounter += 3;
+        } 
+    }
+
+    return pixels;
+}
 
 int main(){
 
@@ -21,6 +37,8 @@ int main(){
             rawData[i * cols * channels + j] = rowPointer[j];
         }
     }
+
+    rawData = BarcodeToPixels(rawData, totalLength);
 
     uint8_t currentByte;
     uint8_t* bytePointer = new uint8_t[totalLength / 8];
