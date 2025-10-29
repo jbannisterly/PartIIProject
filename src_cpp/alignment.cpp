@@ -24,18 +24,20 @@ int GetIndexPadding(int nY, int nX, int y, int x){
 
 uint8_t* Threshold(float* image, int nY, int nX){
     uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t) * nY * nX);
+    const float WINDOW_SIZE = 200;
+    const float WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
 
     for (int yy = 0; yy < nY; yy++){
         float m = 0;
-        for (int xi = -17; xi <= 17; xi++){
-            for (int yi = -17; yi <= 17; yi++){
-                m += image[GetIndexPadding(nY, nX, yy + yi, xi - 1)] / 35 / 35;
+        for (int xi = -WINDOW_SIZE; xi <= WINDOW_SIZE; xi++){
+            for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
+                m += image[GetIndexPadding(nY, nX, yy + yi, xi - 1)] / WINDOW_SCALE;
             }
         }
         for (int xx = 0; xx < nX; xx++){
-            for (int yi = -17; yi <= 17; yi++){
-                m += image[GetIndexPadding(nY, nX, yy + yi, xx + 17)] / 35 / 35;
-                m -= image[GetIndexPadding(nY, nX, yy + yi, xx - 17)] / 35 / 35;
+            for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
+                m += image[GetIndexPadding(nY, nX, yy + yi, xx + WINDOW_SIZE)] / WINDOW_SCALE;
+                m -= image[GetIndexPadding(nY, nX, yy + yi, xx - WINDOW_SIZE)] / WINDOW_SCALE;
             }
 
             if (image[yy * nX + xx] > 180){
@@ -50,10 +52,10 @@ uint8_t* Threshold(float* image, int nY, int nX){
         }
     }
 
-    std::cout << "works";
-
     return threshold;
 }
+
+
 
 uint8_t* Uint8ToPixels(uint8_t* data, int nPixels){
     uint8_t* pixels = (uint8_t*)malloc(sizeof(uint8_t) * nPixels * 3);
