@@ -2,6 +2,8 @@
 #include <opencv2/opencv.hpp>
 #include "image_aux.hpp"
 
+#include <stdio.h>
+
 using namespace cv;
 
 float* Greyscale(uint8_t* image, int pixels){
@@ -14,24 +16,41 @@ float* Greyscale(uint8_t* image, int pixels){
     return grey;
 }
 
-int GetIndexPadding(int nY, int nX, int x, int y){
-    int yy = y > 0 ? (y < nY ? y : nY) : 0;
-    int xx = x > 0 ? (x < nX ? x : nX) : 0;
+int GetIndexPadding(int nY, int nX, int y, int x){
+    int yy = y > 0 ? (y < nY ? y : nY - 1) : 0;
+    int xx = x > 0 ? (x < nX ? x : nX - 1) : 0;
     return yy * nX + xx;
 }
 
 uint8_t* Threshold(float* image, int nY, int nX){
-    uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t*) * nY * nX);
+    uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t) * nY * nX);
 
     for (int yy = 0; yy < nY; yy++){
+        float m = 0;
+        for (int xi = -17; xi <= 17; xi++){
+            for (int yi = -17; yi <= 17; yi++){
+                m += image[GetIndexPadding(nY, nX, yy + yi, xi - 1)] / 35 / 35;
+            }
+        }
         for (int xx = 0; xx < nX; xx++){
+            for (int yi = -17; yi <= 17; yi++){
+                m += image[GetIndexPadding(nY, nX, yy + yi, xx + 17)] / 35 / 35;
+                m -= image[GetIndexPadding(nY, nX, yy + yi, xx - 17)] / 35 / 35;
+            }
+
             if (image[yy * nX + xx] > 180){
                 threshold[yy * nX + xx] = 0;
             }else{
-                threshold[yy * nX + xx] = 255;
+                if(image[yy * nX + xx] * 1.1 >= m - 10){
+                    threshold[yy * nX + xx] = 0;
+                }else{
+                    threshold[yy * nX + xx] = 255;
+                }
             }
         }
     }
+
+    std::cout << "works";
 
     return threshold;
 }
