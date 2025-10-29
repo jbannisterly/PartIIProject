@@ -1,6 +1,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include "barcode_layout.hpp"
+#include "image_aux.hpp"
 
 using namespace cv;
 
@@ -28,17 +29,8 @@ int main(){
     int cols = image.cols;
     int totalLength = rows * cols * channels;
 
-    uint8_t* rawData = new uint8_t[totalLength];
-    uint8_t* rowPointer;
-
-    for (int i = 0; i < rows; i++){
-        rowPointer = image.ptr(i);
-        for (int j = 0; j < cols * channels; j++){
-            rawData[i * cols * channels + j] = rowPointer[j];
-        }
-    }
-
-    rawData = BarcodeToPixels(rawData, totalLength);
+    uint8_t* imageBytes = MatToBytes(image);
+    uint8_t* rawData = BarcodeToPixels(imageBytes, totalLength);
 
     uint8_t currentByte;
     uint8_t* bytePointer = new uint8_t[totalLength / 8];
