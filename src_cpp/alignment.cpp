@@ -24,7 +24,7 @@ int GetIndexPadding(int nY, int nX, int y, int x){
 
 uint8_t* Threshold(float* image, int nY, int nX){
     uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t) * nY * nX);
-    const float WINDOW_SIZE = 0;
+    const float WINDOW_SIZE = 200;
     const float WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
 
     for (int yy = 0; yy < nY; yy++){
@@ -77,16 +77,12 @@ struct FinderCandidate{
     }
 };
 
-std::vector<FinderCandidate>* FinderPatterns(uint8_t* data, int sizeY, int sizeX){
+std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX){
     int index = 0;
     int w[5];
     int wIndex = 0;
     int size = sizeX * sizeY;
-    
-    // Start on a black pixel
-    if (data[0] > 0){
-        wIndex = CountSame(data, wIndex, size);
-    } 
+    std::vector<FinderCandidate> finder;
     
     for (int i = 0; i < 5; i++){
         w[i] = CountSame(data, wIndex, size);
@@ -111,27 +107,144 @@ std::vector<FinderCandidate>* FinderPatterns(uint8_t* data, int sizeY, int sizeX
             }
         }
 
-        if(valid){
+        if(valid && data[wIndex] > 0){
             int centre = int(wIndex - w[4] - w[3] - w[2] / 2);
-            std::cout << centre << std::endl;
-            std::cout << avg << std::endl;
+            int width = avg * 7;
+            finder.push_back(FinderCandidate(centre / sizeX, centre % sizeX, width));
             for (int counter = int(-avg * 7 / 2); counter < avg * 7 / 2; counter++){
-                data[centre + counter] = 127; // visualise centre
+                // data[centre + counter] = 127; // visualise centre
             }
         }
 
-        // Read another white and black
-        for (int i = 0; i < 3; i++){
-            w[i] = w[i + 2];
+        // Read another
+        for (int i = 0; i < 4; i++){
+            w[i] = w[i + 1];
         }
-        for (int i = 3; i < 5; i++){
+        for (int i = 4; i < 5; i++){
             w[i] = CountSame(data, wIndex, size);
             wIndex += w[i];
         }
     }
 
-    return new std::vector<FinderCandidate>;
+    return finder;
 } 
+
+struct VerticalData{
+    uint8_t* data;
+    int height;
+    int width;
+};
+
+class FinderGroup{
+    public:
+    FinderCandidate Centre();
+
+    private:
+    std::vector<FinderCandidate> candidates;
+
+    // Get rectangle around candidates to check for finder pattern
+    VerticalData VerticalSample(uint8_t* data, int dataX, int dataY){
+        FinderCandidate centre = Centre();
+        int startX = centre.x - centre.width * 1.3 / 7;
+        int startY = centre.y - centre.width * 5.5 / 7;
+        if (startX < 0) startX = 0;
+        if (startY < 0) startY = 0;
+
+        VerticalData sample;
+        
+        sample.height = centre.width * 11 / 7;
+        sample.width = centre.width * 2.6 / 7;
+
+        sample.data = (uint8_t*)malloc(sizeof(uint8_t) * sample.height * sample.width);
+
+        int index = 0;
+        for (int xx = startX; xx < startX + sample.width; xx++){
+            for (int yy = startY; yy < startY + sample.height; yy++){
+                sample.data[index] = data[yy * dataX + xx];
+                index++;
+            }
+        }
+
+        return sample;
+    }
+
+    public:
+    bool TryAddCandidate(FinderCandidate toAdd){
+        if (candidates.size() == 0){
+            candidates.push_back(toAdd);
+            return true;
+        }
+
+        if (toAdd.width > candidates[0].width + 20) return false;
+        if (toAdd.width < candidates[0].width - 20) return false;
+        if (toAdd.x > candidates[0].x + 30) return false;
+        if (toAdd.x < candidates[0].x - 30) return false;
+        if (toAdd.y > candidates[0].y + candidates[0].width * 3 / 7) return false;
+        if (toAdd.y < candidates[0].y - candidates[0].width * 3 / 7) return false;
+
+        candidates.push_back(toAdd);
+        return true;
+    }
+
+    bool isValid(uint8_t* imageData, int dataX, int dataY){
+        VerticalData vertical = VerticalSample(imageData, dataX, dataY);
+
+        std::vector<FinderCandidate> verticalPatterns = FinderPatterns(vertical.data, vertical.width, vertical.height);
+        bool verticalFound = verticalPatterns.size() > 0;
+        
+        // while(verticalPatterns.size() > 0){
+        //     FinderCandidate temp(0,0,0);
+        //     verticalPatterns.push_back(temp);
+        // }
+
+        free(vertical.data);
+
+        return verticalFound;
+    }
+
+    int size(){
+        return candidates.size();
+    }
+};
+
+FinderCandidate FinderGroup::Centre(){
+    FinderCandidate centre(0,0,0);
+
+    for (int i = 0; i < candidates.size(); i++){
+        centre.x += candidates[i].x;
+        centre.y += candidates[i].y;
+        centre.width += candidates[i].width;
+    }
+
+    centre.x /= candidates.size();
+    centre.y /= candidates.size();
+    centre.width /= candidates.size();
+
+    return centre;
+}
+
+std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> candidates){
+    std::vector<FinderGroup> finderGroup;
+
+    for (int i = 0; i < candidates.size(); i++){
+        int j = 0;
+        bool newNeeded = true;
+        while(j < finderGroup.size()){
+            if (finderGroup[j].TryAddCandidate(candidates[i])){
+                j = finderGroup.size();
+                newNeeded = false;
+            }
+            j++;
+        }
+        if (newNeeded) {
+            FinderGroup newGroup = FinderGroup();
+            newGroup.TryAddCandidate(candidates[i]);
+            finderGroup.push_back(newGroup);
+        }
+    }
+
+    return finderGroup;
+}
 
 uint8_t* Uint8ToPixels(uint8_t* data, int nPixels){
     uint8_t* pixels = (uint8_t*)malloc(sizeof(uint8_t) * nPixels * 3);
@@ -168,10 +281,45 @@ int main(){
     float* grey = Greyscale(data, nPixels);
     uint8_t* threshold = Threshold(grey, image.rows, image.cols);
 
-    std::vector<FinderCandidate>* finder = FinderPatterns(threshold, image.rows, image.cols);
+    std::vector<FinderCandidate> finder = FinderPatterns(threshold, image.rows, image.cols);
+    std::cout << "finderpatterns";
+    std::vector<FinderGroup> finderGroups = GroupFinders(finder);
+    std::cout << "findergroups";
 
-    for (int i = 0; i < nPixels; i++){
-        if (threshold[i] == 255) threshold[i] = 0;
+    std::vector<int> finderGroupsValid;
+
+    for (int i = 0; i < finderGroups.size(); i++){
+        bool valid = finderGroups[i].isValid(data, image.cols, image.rows);
+        if (valid){
+            finderGroupsValid.push_back(i);
+        }
+    }
+
+    int size[finderGroups.size()];
+
+    for (int i = 0; i < finderGroups.size(); i++){
+        size[i] = finderGroups[i].size();
+    }
+
+    std::sort(finderGroupsValid.begin(), finderGroupsValid.end(), [&size](int a, int b){
+        return size[a] > size[b];
+    });
+
+    std::cout << finderGroupsValid.size();
+
+    int maxSize = finderGroups[finderGroupsValid[0]].size();
+
+    for (int i = 0; i < finderGroupsValid.size(); i++){
+        if(finderGroups[finderGroupsValid[i]].size() * 3 > maxSize){
+            FinderCandidate centre = finderGroups[finderGroupsValid[i]].Centre();
+            for (int j = -5; j < 5; j++) {
+                threshold[(centre.y + j) * image.cols + centre.x] = 127;
+                threshold[centre.y * image.cols + centre.x + j] = 127;
+            }
+            std::cout << "x";
+        }else{
+            break;
+        }
     }
 
     uint8_t* pixels = Uint8ToPixels(threshold, nPixels);
