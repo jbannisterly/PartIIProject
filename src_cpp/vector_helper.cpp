@@ -14,5 +14,5 @@ Vec3 operator*(Vec3 a, Vec3 b){
 
 bool Clockwise(Vec3 a, Vec3 b, Vec3 c){
     Vec3 cross = (a - b) * (c - a);
-    return cross.z > 0;
+    return cross.z < 0;
 }

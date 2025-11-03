@@ -1,15 +1,15 @@
-class Vec3(){
+class Vec3{
     public:
     float x;
     float y;
     float z;
 
-    Vec3(float inX, float inY, float inZ)){
-        this.x = inX;
-        this.y = inY;
-        this.z = inZ;
+    Vec3(float inX, float inY, float inZ){
+        this->x = inX;
+        this->y = inY;
+        this->z = inZ;
     }
-}
+};
 
 Vec3 operator-(Vec3 a, Vec3 b);
 Vec3 operator*(Vec3 a, Vec3 b);

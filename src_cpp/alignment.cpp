@@ -3,6 +3,7 @@
 #include "image_aux.hpp"
 #include <vector>
 #include <stdio.h>
+#include "vector_helper.hpp"
 
 using namespace cv;
 
@@ -270,6 +271,73 @@ uint8_t* FloatToPixels(float* floats, int nPixels){
     return pixels;
 }
 
+std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> finderGroups, std::vector<int> finderGroupsValid){
+    std::vector<FinderCandidate> centres;
+
+    int maxSize = finderGroups[finderGroupsValid[0]].size();
+    for (int i = 0; i < finderGroupsValid.size(); i++){
+        if(finderGroups[finderGroupsValid[i]].size() * 3 > maxSize){
+            FinderCandidate centre = finderGroups[finderGroupsValid[i]].Centre();
+            centres.push_back(centre);
+        }else{
+            break;
+        }
+    }
+
+    return centres;
+}
+
+struct Position{
+    int x;
+    int y;
+};
+
+int DistanceSquared(FinderCandidate a, FinderCandidate b){
+    return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+}
+
+FinderCandidate* OrderCentres(std::vector<FinderCandidate> centres){
+    int sumDistanceSquared[3];
+    for (int i = 0; i < 3; i++){
+        sumDistanceSquared[i] = 0;
+        for (int j = 0; j < 3; j++){
+            sumDistanceSquared[i] += DistanceSquared(centres[i], centres[j]);
+        }
+    }
+
+    int minSum = sumDistanceSquared[0];
+    int minIndex = 0;
+    for (int i = 0; i < 3; i++){
+        if (sumDistanceSquared[i] < minSum){
+            minSum = sumDistanceSquared[i];
+            minIndex = i;
+        }
+    }    
+    
+    bool clockwise = Clockwise(
+        Vec3(centres[0].x, centres[0].y, 0),
+        Vec3(centres[1].x, centres[1].y, 0),
+        Vec3(centres[2].x, centres[2].y, 0)
+    );
+
+    // p1 -- p2
+    // |
+    // |
+    // p0
+
+    FinderCandidate* candidatesSorted = (FinderCandidate*)malloc(sizeof(FinderCandidate) * 3);
+    candidatesSorted[1] = centres[minIndex];
+    if (clockwise){
+        candidatesSorted[0] = centres[(minIndex + 2) % 3];
+        candidatesSorted[2] = centres[(minIndex + 1) % 3];
+    }else{
+        candidatesSorted[0] = centres[(minIndex + 1) % 3];
+        candidatesSorted[2] = centres[(minIndex + 2) % 3];
+    }
+
+    return candidatesSorted;
+}
+
 int main(){
     const char* filePath = "output/output_distorted.png";
     const char* filePathOut = "output/output_align.png";
@@ -282,9 +350,7 @@ int main(){
     uint8_t* threshold = Threshold(grey, image.rows, image.cols);
 
     std::vector<FinderCandidate> finder = FinderPatterns(threshold, image.rows, image.cols);
-    std::cout << "finderpatterns";
     std::vector<FinderGroup> finderGroups = GroupFinders(finder);
-    std::cout << "findergroups";
 
     std::vector<int> finderGroupsValid;
 
@@ -305,21 +371,12 @@ int main(){
         return size[a] > size[b];
     });
 
-    std::cout << finderGroupsValid.size();
+    std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValid);
+    FinderCandidate* centresSorted = OrderCentres(centres);
 
-    int maxSize = finderGroups[finderGroupsValid[0]].size();
-
-    for (int i = 0; i < finderGroupsValid.size(); i++){
-        if(finderGroups[finderGroupsValid[i]].size() * 3 > maxSize){
-            FinderCandidate centre = finderGroups[finderGroupsValid[i]].Centre();
-            for (int j = -5; j < 5; j++) {
-                threshold[(centre.y + j) * image.cols + centre.x] = 127;
-                threshold[centre.y * image.cols + centre.x + j] = 127;
-            }
-            std::cout << "x";
-        }else{
-            break;
-        }
+    for (int i = -5; i < 5; i++){
+        threshold[centresSorted[0].x + centresSorted[0].y * image.cols + i] = 127;
+        threshold[centresSorted[0].x + (centresSorted[0].y + i) * image.cols] = 127;
     }
 
     uint8_t* pixels = Uint8ToPixels(threshold, nPixels);
