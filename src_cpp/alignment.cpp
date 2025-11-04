@@ -338,6 +338,27 @@ FinderCandidate* OrderCentres(std::vector<FinderCandidate> centres){
     return candidatesSorted;
 }
 
+Vec3* BoundingBox(FinderCandidate* finders){
+    Vec3* bounds = (Vec3*)malloc(sizeof(Vec3) * 4);
+    Vec3* findersVec = (Vec3*)malloc(sizeof(Vec3) * 3);
+    
+    for (int i = 0; i < 3; i++){
+        findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
+    }
+
+    std::cout << finders[0].width;
+
+    bounds[0] = findersVec[0] + (Normalise(findersVec[0] - findersVec[2]) * finders[0].width * sqrt(2) * 0.5);
+    bounds[1] = findersVec[1] + ((Normalise(findersVec[1] - findersVec[2]) + 
+                Normalise(findersVec[1] - findersVec[0]))
+                * finders[1].width) * 0.5;
+    bounds[2] = findersVec[2] + (Normalise(findersVec[2] - findersVec[0]) * finders[2].width * sqrt(2) * 0.5);
+
+    free(findersVec);
+
+    return bounds;
+}
+
 int main(){
     const char* filePath = "output/output_distorted.png";
     const char* filePathOut = "output/output_align.png";
@@ -374,9 +395,20 @@ int main(){
     std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValid);
     FinderCandidate* centresSorted = OrderCentres(centres);
 
+    Vec3* bounds = BoundingBox(centresSorted);
+
     for (int i = -5; i < 5; i++){
-        threshold[centresSorted[0].x + centresSorted[0].y * image.cols + i] = 127;
-        threshold[centresSorted[0].x + (centresSorted[0].y + i) * image.cols] = 127;
+        threshold[int(bounds[0].x) + int(bounds[0].y) * image.cols + i] = 127;
+        threshold[int(bounds[0].x) + (int(bounds[0].y) + i) * image.cols] = 127;
+    }
+
+    for (int i = 0; i < 3; i++){
+        std::cout << bounds[i].x << "," << bounds[i].y << std::endl;
+        std::cout << centres[i].x << "," << centres[i].y << std::endl;
+        for (int j = -5; j < 5; j++){
+            threshold[int(bounds[i].x) + int(bounds[i].y) * image.cols + j] = 127;
+            threshold[int(bounds[i].x) + (int(bounds[i].y) + i) * image.cols] = 127;
+        }
     }
 
     uint8_t* pixels = Uint8ToPixels(threshold, nPixels);

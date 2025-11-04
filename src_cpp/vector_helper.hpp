@@ -9,8 +9,14 @@ class Vec3{
         this->y = inY;
         this->z = inZ;
     }
+
+    void Print();
 };
 
 Vec3 operator-(Vec3 a, Vec3 b);
 Vec3 operator*(Vec3 a, Vec3 b);
 bool Clockwise(Vec3 a, Vec3 b, Vec3 c);
+float Magnitude(Vec3 a);
+Vec3 Normalise(Vec3 a);
+Vec3 operator*(Vec3 a, float scale);
+Vec3 operator+(Vec3 a, Vec3 b);
