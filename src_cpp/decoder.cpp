@@ -22,7 +22,7 @@ uint8_t* BarcodeToPixels(uint8_t* barcode, int barcodeSize){
 
 int main(){
 
-    Mat image = imread("output/output.png");
+    Mat image = imread("output/output_align.png");
 
     int channels = image.channels();
     int rows = image.rows;

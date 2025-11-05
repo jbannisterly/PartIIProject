@@ -20,3 +20,4 @@ float Magnitude(Vec3 a);
 Vec3 Normalise(Vec3 a);
 Vec3 operator*(Vec3 a, float scale);
 Vec3 operator+(Vec3 a, Vec3 b);
+Vec3 Intersection(Vec3 dirA, Vec3 dirB, Vec3 posA, Vec3 posB);

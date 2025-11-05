@@ -402,8 +402,21 @@ FinderCandidate* OrderCentres(std::vector<FinderCandidate> centres){
     return candidatesSorted;
 }
 
+void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
+    bounds[3] = bounds[0] + bounds[2] - bounds[1];
+}
+
+void BoundingBoxMissingCorner2(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
+    const float MODULEOFFSET = 4.5;
+    Vec3 bottomLeftDir = (Normalise(findersVec[0] - findersVec[1]) * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
+    Vec3 topRightDir = (Normalise(findersVec[2] - findersVec[1]) * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
+
+    bounds[3] = Intersection(bottomLeftDir, topRightDir, bounds[0], bounds[2]);    
+}
+
+
 Vec3* BoundingBox(FinderCandidate* finders){
-    const float MODULEOFFSET = 3.5;
+    const float MODULEOFFSET = 4.5;
 
     Vec3* bounds = (Vec3*)malloc(sizeof(Vec3) * 4);
     Vec3* findersVec = (Vec3*)malloc(sizeof(Vec3) * 3);
@@ -420,7 +433,7 @@ Vec3* BoundingBox(FinderCandidate* finders){
                 * finders[1].width) * (MODULEOFFSET / 7);
     bounds[2] = findersVec[2] + (Normalise(findersVec[2] - findersVec[0]) * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
 
-    bounds[3] = bounds[0] + bounds[2] - bounds[1];
+    BoundingBoxMissingCorner2(finders, findersVec, bounds);
 
     free(findersVec);
 
@@ -520,7 +533,7 @@ int main(){
         projectCoords[i * 2 + 1] = bounds[i].y;
     }
 
-    outputImage = Project(image, projectCoords, Position(100, 100)); 
+    outputImage = Project(image, projectCoords, Position(27, 27)); 
 
     imwrite(filePathOut, outputImage);
     imwrite(filePathDebug, debugImage);

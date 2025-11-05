@@ -6,6 +6,8 @@
 
 using namespace cv;
 
+const int BARCODE_SIZE = 27;
+
 uint8_t* EncodeMessage(char* message){
     uint16_t length = strlen(message);
 
@@ -43,7 +45,7 @@ PixelData* MessageToPixels(uint8_t* byteData, uint16_t length){
 }
 
 uint8_t* PixelsToBarcode(PixelData* pixels){
-    int size = 25 * 25 * 3;
+    int size = BARCODE_SIZE * BARCODE_SIZE * 3;
     BarcodeLayout* barcode = GetBarcode();
 
     int sourceCounter = 0;
@@ -71,7 +73,7 @@ int main(){
     PixelData* pixelData = MessageToPixels(byteData, strlen(message) + 2);
     uint8_t* imageData = PixelsToBarcode(pixelData);
 
-    Mat image(25, 25, CV_8UC3);
+    Mat image(BARCODE_SIZE, BARCODE_SIZE, CV_8UC3);
     image.data = imageData;
 
     imwrite("output/output.png", image);

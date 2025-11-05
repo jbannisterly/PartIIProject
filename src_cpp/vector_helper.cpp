@@ -39,3 +39,9 @@ Vec3 operator+(Vec3 a, Vec3 b){
 void Vec3::Print(){
     std::cout << x << "," << y << "," << z << std::endl;
 }
+
+Vec3 Intersection(Vec3 dirA, Vec3 dirB, Vec3 posA, Vec3 posB){
+    float mu = (dirA.x * (posA.y - posB.y) + dirA.y * (posB.x - posB.x)) / (dirA.x * dirB.y - dirA.y * dirB.x);   
+
+    return posB + (dirB * mu);
+}
