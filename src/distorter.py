@@ -12,7 +12,7 @@ proj_from = np.float32([[0,0],[y,0],[0,x],[y,x]])
 proj_to = np.float32([[40,605],[940, 506],[100,1460],[1028,1488]])
 
 transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)
-barcode_proj  = np.float32(cv2.warpPerspective(barcode, transform_matrix, (1080, 1920))) / 256
+barcode_proj = np.float32(cv2.warpPerspective(barcode, transform_matrix, (1080, 1920))) / 256
 
 mask = np.zeros((1920, 1080, 3))
 mask = cv2.fillPoly(mask, pts=[np.int32(proj_to[[0,1,3,2]])], color=(1,1,1))

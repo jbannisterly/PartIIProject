@@ -403,6 +403,8 @@ FinderCandidate* OrderCentres(std::vector<FinderCandidate> centres){
 }
 
 Vec3* BoundingBox(FinderCandidate* finders){
+    const float MODULEOFFSET = 3.5;
+
     Vec3* bounds = (Vec3*)malloc(sizeof(Vec3) * 4);
     Vec3* findersVec = (Vec3*)malloc(sizeof(Vec3) * 3);
     
@@ -412,11 +414,11 @@ Vec3* BoundingBox(FinderCandidate* finders){
 
     std::cout << finders[0].width;
 
-    bounds[0] = findersVec[0] + (Normalise(findersVec[0] - findersVec[2]) * finders[0].width * sqrt(2) * 0.5);
+    bounds[0] = findersVec[0] + (Normalise(findersVec[0] - findersVec[2]) * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
     bounds[1] = findersVec[1] + ((Normalise(findersVec[1] - findersVec[2]) + 
                 Normalise(findersVec[1] - findersVec[0]))
-                * finders[1].width) * 0.5;
-    bounds[2] = findersVec[2] + (Normalise(findersVec[2] - findersVec[0]) * finders[2].width * sqrt(2) * 0.5);
+                * finders[1].width) * (MODULEOFFSET / 7);
+    bounds[2] = findersVec[2] + (Normalise(findersVec[2] - findersVec[0]) * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
 
     bounds[3] = bounds[0] + bounds[2] - bounds[1];
 
@@ -454,6 +456,7 @@ Mat Project(Mat input, int* inputCoords, Position size){
 int main(){
     const char* filePath = "output/output_distorted.png";
     const char* filePathOut = "output/output_align.png";
+    const char* filePathDebug = "output/output_debug.png";
 
     Mat image = imread(filePath);
     int nPixels = image.cols * image.rows; 
@@ -493,7 +496,7 @@ int main(){
 
     Vec3* bounds = BoundingBox(centresSorted);
 
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < 4; i++){
         std::cout << bounds[i].x << "," << bounds[i].y << std::endl;
         std::cout << centres[i].x << "," << centres[i].y << std::endl;
         for (int j = -10; j < 10; j++){
@@ -507,8 +510,9 @@ int main(){
 
     uint8_t* pixels = Uint8ToPixels(threshold, nPixels);
 
-    Mat outputImage(image.rows, image.cols, CV_8UC3);
-    outputImage.data = pixels;
+    Mat outputImage;
+    Mat debugImage(image.rows, image.cols, CV_8UC3);
+    debugImage.data = pixels;
 
     int* projectCoords = (int*)malloc(sizeof(int) * 8);
     for (int i = 0; i < 4; i++){
@@ -516,7 +520,8 @@ int main(){
         projectCoords[i * 2 + 1] = bounds[i].y;
     }
 
-    outputImage = Project(image, projectCoords, Position(25, 25)); 
+    outputImage = Project(image, projectCoords, Position(100, 100)); 
 
     imwrite(filePathOut, outputImage);
+    imwrite(filePathDebug, debugImage);
 }
