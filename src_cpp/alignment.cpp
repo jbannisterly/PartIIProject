@@ -418,6 +418,8 @@ Vec3* BoundingBox(FinderCandidate* finders){
                 * finders[1].width) * 0.5;
     bounds[2] = findersVec[2] + (Normalise(findersVec[2] - findersVec[0]) * finders[2].width * sqrt(2) * 0.5);
 
+    bounds[3] = bounds[0] + bounds[2] - bounds[1];
+
     free(findersVec);
 
     return bounds;
@@ -426,12 +428,13 @@ Vec3* BoundingBox(FinderCandidate* finders){
 Mat Project(Mat input, int* inputCoords, Position size){
     Mat output;
 
+    const int cornerIndices[4] = {1, 2, 0, 3};
+
     Point2f startCoords[4];
     for (int i = 0; i < 4; i++){
-        startCoords[i] = Point2f(inputCoords[i * 2], inputCoords[i * 2 + 1]);
+        startCoords[i] = Point2f(inputCoords[cornerIndices[i] * 2], inputCoords[cornerIndices[i] * 2 + 1]);
         std::cout << startCoords[i] << std::endl;
     }
-
 
     Point2f endCoords[4];
     endCoords[0] = Point2f(0,0);
@@ -454,81 +457,66 @@ int main(){
 
     Mat image = imread(filePath);
     int nPixels = image.cols * image.rows; 
-    // Debug = (uint8_t*)malloc(sizeof(uint8_t) * nPixels);
-    // for(int i = 0; i < nPixels; i++) Debug[i] = 0;
+    Debug = (uint8_t*)malloc(sizeof(uint8_t) * nPixels);
+    for(int i = 0; i < nPixels; i++) Debug[i] = 0;
 
-    // uint8_t* data = MatToBytes(image);
+    uint8_t* data = MatToBytes(image);
 
-    // float* grey = Greyscale(data, nPixels);
-    // uint8_t* threshold = Threshold(grey, image.rows, image.cols);
+    float* grey = Greyscale(data, nPixels);
+    uint8_t* threshold = Threshold(grey, image.rows, image.cols);
 
 
-    // std::vector<FinderCandidate> finder = FinderPatterns(threshold, image.rows, image.cols);
-    // std::vector<FinderGroup> finderGroups = GroupFinders(finder);
+    std::vector<FinderCandidate> finder = FinderPatterns(threshold, image.rows, image.cols);
+    std::vector<FinderGroup> finderGroups = GroupFinders(finder);
 
-    // std::vector<int> finderGroupsValid;
+    std::vector<int> finderGroupsValid;
 
-    // for (int i = 0; i < finderGroups.size(); i++){
-    //     bool valid = finderGroups[i].isValid(data, image.cols, image.rows);
-    //     if (valid){
-    //         finderGroupsValid.push_back(i);
-    //     }
-    // }
+    for (int i = 0; i < finderGroups.size(); i++){
+        bool valid = finderGroups[i].isValid(data, image.cols, image.rows);
+        if (valid){
+            finderGroupsValid.push_back(i);
+        }
+    }
 
-    // int size[finderGroups.size()];
+    int size[finderGroups.size()];
 
-    // for (int i = 0; i < finderGroups.size(); i++){
-    //     size[i] = finderGroups[i].size();
-    // }
+    for (int i = 0; i < finderGroups.size(); i++){
+        size[i] = finderGroups[i].size();
+    }
 
-    // std::sort(finderGroupsValid.begin(), finderGroupsValid.end(), [&size](int a, int b){
-    //     return size[a] > size[b];
-    // });
+    std::sort(finderGroupsValid.begin(), finderGroupsValid.end(), [&size](int a, int b){
+        return size[a] > size[b];
+    });
 
-    // std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValid);
-    // FinderCandidate* centresSorted = OrderCentres(centres);
+    std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValid);
+    FinderCandidate* centresSorted = OrderCentres(centres);
 
-    // Vec3* bounds = BoundingBox(centresSorted);
+    Vec3* bounds = BoundingBox(centresSorted);
 
-    // for (int i = 0; i < 3; i++){
-    //     std::cout << bounds[i].x << "," << bounds[i].y << std::endl;
-    //     std::cout << centres[i].x << "," << centres[i].y << std::endl;
-    //     for (int j = -10; j < 10; j++){
-    //         Debug[int(centres[i].x) + int(centres[i].y) * image.cols + j] = 255;
-    //         Debug[int(centres[i].x) + (int(centres[i].y) + j) * image.cols] = 255;
-    //         Debug[int(bounds[i].x) + int(bounds[i].y) * image.cols + j] = 127;
-    //         Debug[int(bounds[i].x) + (int(bounds[i].y) + j) * image.cols] = 127;
+    for (int i = 0; i < 3; i++){
+        std::cout << bounds[i].x << "," << bounds[i].y << std::endl;
+        std::cout << centres[i].x << "," << centres[i].y << std::endl;
+        for (int j = -10; j < 10; j++){
+            Debug[int(centres[i].x) + int(centres[i].y) * image.cols + j] = 255;
+            Debug[int(centres[i].x) + (int(centres[i].y) + j) * image.cols] = 255;
+            Debug[int(bounds[i].x) + int(bounds[i].y) * image.cols + j] = 127;
+            Debug[int(bounds[i].x) + (int(bounds[i].y) + j) * image.cols] = 127;
 
-    //     }
-    // }
+        }
+    }
 
-    // uint8_t* pixels = Uint8ToPixels(threshold, nPixels);
+    uint8_t* pixels = Uint8ToPixels(threshold, nPixels);
 
     Mat outputImage(image.rows, image.cols, CV_8UC3);
-    // outputImage.data = pixels;
+    outputImage.data = pixels;
 
     int* projectCoords = (int*)malloc(sizeof(int) * 8);
-    // for (int i = 0; i < 4; i++){
-    //     projectCoords[i * 2] = bounds[i].x;
-    //     projectCoords[i * 2 + 1] = bounds[i].y;
-    // }
+    for (int i = 0; i < 4; i++){
+        projectCoords[i * 2] = bounds[i].x;
+        projectCoords[i * 2 + 1] = bounds[i].y;
+    }
 
-    projectCoords[6] = image.cols;
-    projectCoords[7] = image.rows;
-
-    std::cout << image.cols << "," << image.rows << std::endl;
-
-
-    projectCoords[0] = 0;
-    projectCoords[1] = 0;
-    projectCoords[2] = image.cols - 1;
-    projectCoords[3] = 0;
-    projectCoords[4] = 0;
-    projectCoords[5] = image.rows - 1;
-    projectCoords[6] = image.cols - 1;
-    projectCoords[7] = image.rows -1 ;
-
-    outputImage = Project(image, projectCoords, Position(image.cols, image.rows)); 
+    outputImage = Project(image, projectCoords, Position(25, 25)); 
 
     imwrite(filePathOut, outputImage);
 }
