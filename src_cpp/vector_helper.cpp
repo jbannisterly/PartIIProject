@@ -24,8 +24,8 @@ float Magnitude(Vec3 a){
 }
 
 Vec3 Normalise(Vec3 a){
-    Vec3 nomalised = a * (1 / Magnitude(a));
-    return a * (1 / Magnitude(a));
+    Vec3 normalised = a * (1 / Magnitude(a));
+    return normalised;
 }
 
 Vec3 operator*(Vec3 a, float scale){

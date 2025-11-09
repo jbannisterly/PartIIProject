@@ -1,3 +1,4 @@
+#include "_config.hpp"
 #include "alignment.hpp"
 #include <opencv2/opencv.hpp>
 #include "image_aux.hpp"
@@ -37,7 +38,6 @@ int GetIndexPadding(int nY, int nX, int y, int x){
 
 uint8_t* Threshold(float* image, int nY, int nX){
     uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t) * nY * nX);
-    const float WINDOW_SIZE = 200;
     const float WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
 
     for (int yy = 0; yy < nY; yy++){
@@ -110,13 +110,13 @@ std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX)
         bool valid = true;
         for (int i = 0; i < 5; i++){
             if (i == 2){
-                if (w[i] > 3 * avg + 20) valid = false; // tolerance is 10x more than paper
-                if (w[i] < 3 * avg - 20) valid = false;
+                if (w[i] > 3 * avg + TOLERANCE_PIXELS) valid = false; // tolerance is 10x more than paper
+                if (w[i] < 3 * avg - TOLERANCE_PIXELS) valid = false;
                 if (w[2] < w[0] + w[1]) valid = false;
                 if (w[2] < w[3] + w[4]) valid = false;
             }else{
-                if (w[i] > avg + 20) valid = false;
-                if (w[i] < avg - 15) valid = false;
+                if (w[i] > avg + TOLERANCE_PIXELS) valid = false;
+                if (w[i] < avg - TOLERANCE_PIXELS * 0.75) valid = false;
             }
         }
 
@@ -217,8 +217,8 @@ class FinderGroup{
             return true;
         }
 
-        if (toAdd.width > candidates[0].width + 20) return false;
-        if (toAdd.width < candidates[0].width - 20) return false;
+        if (toAdd.width > candidates[0].width + TOLERANCE_PIXELS) return false;
+        if (toAdd.width < candidates[0].width - TOLERANCE_PIXELS) return false;
         if (toAdd.x > candidates[0].x + 30) return false;
         if (toAdd.x < candidates[0].x - 30) return false;
         if (toAdd.y > candidates[0].y + candidates[0].width * 3 / 7) return false;
@@ -402,18 +402,21 @@ FinderCandidate* OrderCentres(std::vector<FinderCandidate> centres){
     return candidatesSorted;
 }
 
+#if METHOD_PATTERN_4 == 1
 void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
     bounds[3] = bounds[0] + bounds[2] - bounds[1];
 }
+#endif
 
-void BoundingBoxMissingCorner2(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
+#if METHOD_PATTERN_4 == 2
+void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
     const float MODULEOFFSET = 4.5;
     Vec3 bottomLeftDir = (Normalise(findersVec[0] - findersVec[1]) * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
     Vec3 topRightDir = (Normalise(findersVec[2] - findersVec[1]) * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
 
     bounds[3] = Intersection(bottomLeftDir, topRightDir, bounds[0], bounds[2]);    
 }
-
+#endif
 
 Vec3* BoundingBox(FinderCandidate* finders){
     const float MODULEOFFSET = 4.5;
@@ -433,7 +436,7 @@ Vec3* BoundingBox(FinderCandidate* finders){
                 * finders[1].width) * (MODULEOFFSET / 7);
     bounds[2] = findersVec[2] + (Normalise(findersVec[2] - findersVec[0]) * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
 
-    BoundingBoxMissingCorner2(finders, findersVec, bounds);
+    BoundingBoxMissingCorner(finders, findersVec, bounds);
 
     free(findersVec);
 

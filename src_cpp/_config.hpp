@@ -1,0 +1,3 @@
+#define METHOD_PATTERN_4 2
+#define TOLERANCE_PIXELS 20
+#define WINDOW_SIZE 200
