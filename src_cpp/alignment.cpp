@@ -12,10 +12,10 @@ using namespace cv;
 uint8_t* Debug;
 
 struct Position{
-    int x;
-    int y;
+    double x;
+    double y;
 
-    Position(int inX, int inY){
+    Position(double inX, double inY){
         x = inX;
         y = inY;
     }
@@ -117,11 +117,11 @@ int CountSame(uint8_t* data, int index, int size){
 }
 
 struct FinderCandidate{
-    int y;
-    int x;
-    int width;
+    double y;
+    double x;
+    double width;
 
-    FinderCandidate(int initY, int initX, int initW){
+    FinderCandidate(double initY, double initX, double initW){
         y = initY;
         x = initX;
         width = initW;
@@ -159,12 +159,12 @@ std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX)
         }
 
         if(valid && data[wIndex] > 0){
-            int centre = int(wIndex - w[4] - w[3] - w[2] / 2);
-            int width = avg * 7;
-            finder.push_back(FinderCandidate(centre / sizeX, centre % sizeX, width));
-            for (int counter = int(-avg * 7 / 2); counter < avg * 7 / 2; counter++){
-                // data[centre + counter] = 127; // visualise centre
-            }
+            double centre = wIndex - w[4] - w[3] - w[2] / 2;
+            double width = avg * 7;
+            finder.push_back(FinderCandidate(centre / sizeX, centre - int(centre / sizeX) * sizeX, width));
+            // for (int counter = int(-avg * 7 / 2); counter < avg * 7 / 2; counter++){
+            //     // data[centre + counter] = 127; // visualise centre
+            // }
         }
 
         // Read another
@@ -197,8 +197,8 @@ class FinderGroup{
 
     Position* VerticalOffset(){
         FinderCandidate centre = Centre();
-        int startX = centre.x - centre.width * 1.3 / 7;
-        int startY = centre.y - centre.width * 5.5 / 7;
+        double startX = centre.x - centre.width * 1.3 / 7;
+        double startY = centre.y - centre.width * 5.5 / 7;
         if (startX < 0) startX = 0;
         if (startY < 0) startY = 0;
 
@@ -237,7 +237,7 @@ class FinderGroup{
         std::vector<FinderCandidate> verticalCandidates = FinderPatterns(vertical.data, vertical.width, vertical.height);
 
         for (int i = 0; i < verticalCandidates.size(); i++){
-            int temp;
+            double temp;
             temp = verticalCandidates[i].x;
             verticalCandidates[i].x = verticalCandidates[i].y + startPosition->x;
             verticalCandidates[i].y = temp + startPosition->y;
