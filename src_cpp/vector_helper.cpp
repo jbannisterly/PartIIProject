@@ -19,7 +19,7 @@ bool Clockwise(Vec3 a, Vec3 b, Vec3 c){
     return cross.z < 0;
 }
 
-float Magnitude(Vec3 a){
+double Magnitude(Vec3 a){
     return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
@@ -28,7 +28,7 @@ Vec3 Normalise(Vec3 a){
     return normalised;
 }
 
-Vec3 operator*(Vec3 a, float scale){
+Vec3 operator*(Vec3 a, double scale){
     return Vec3((a.x * scale), (a.y * scale), (a.z * scale));
 }
 
@@ -41,7 +41,7 @@ void Vec3::Print(){
 }
 
 Vec3 Intersection(Vec3 dirA, Vec3 dirB, Vec3 posA, Vec3 posB){
-    float mu = (dirA.x * (posA.y - posB.y) + dirA.y * (posB.x - posB.x)) / (dirA.x * dirB.y - dirA.y * dirB.x);   
+    double mu = (dirA.x * (posA.y - posB.y) + dirA.y * (posB.x - posB.x)) / (dirA.x * dirB.y - dirA.y * dirB.x);   
 
     return posB + (dirB * mu);
 }

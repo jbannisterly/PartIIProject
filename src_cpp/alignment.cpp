@@ -20,8 +20,8 @@ struct Position{
     }
 };
 
-float* Greyscale(uint8_t* image, int pixels){
-    float* grey = (float*)malloc(sizeof(float) * pixels);
+double* Greyscale(uint8_t* image, int pixels){
+    double* grey = (double*)malloc(sizeof(double) * pixels);
 
     for (int i = 0; i < pixels; i++){
         grey[i] = (77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256;
@@ -36,12 +36,29 @@ int GetIndexPadding(int nY, int nX, int y, int x){
     return yy * nX + xx;
 }
 
-uint8_t* Threshold(float* image, int nY, int nX){
+double* GetBlurred(double* imageData, int nY, int nX){
+    Mat data = Mat(nY, nX, CV_64F, imageData);
+    Mat* blurred = new Mat(nY, nX, CV_64F);
+
+    std::cout << "pre box filter" << std::endl;
+
+    boxFilter(data, *blurred, -1, Size(WINDOW_SIZE * 2 + 1, WINDOW_SIZE * 2 + 1), Point(-1, -1), true, CV_HAL_BORDER_REPLICATE);
+
+    std::cout << "post box filter" << std::endl;
+
+    return (double*)blurred->ptr();
+}
+
+uint8_t* Threshold(double* image, int nY, int nX){
     uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t) * nY * nX);
-    const float WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
+    const double WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
+    
+    double* blurred = GetBlurred(image, nY, nX);
+
+    std::cout << "did blur";
 
     for (int yy = 0; yy < nY; yy++){
-        float m = 0;
+        double m = 0;
         for (int xi = -WINDOW_SIZE; xi <= WINDOW_SIZE; xi++){
             for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
                 m += image[GetIndexPadding(nY, nX, yy + yi, xi - 1)] / WINDOW_SCALE;
@@ -51,6 +68,10 @@ uint8_t* Threshold(float* image, int nY, int nX){
             for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
                 m += image[GetIndexPadding(nY, nX, yy + yi, xx + WINDOW_SIZE)] / WINDOW_SCALE;
                 m -= image[GetIndexPadding(nY, nX, yy + yi, xx - WINDOW_SIZE)] / WINDOW_SCALE;
+            }
+
+            if (m != blurred[yy * nY + xx]){
+                std::cout << m << " " << blurred[yy * nX + xx] << std::endl;
             }
 
             if (image[yy * nX + xx] > 180){
@@ -103,7 +124,7 @@ std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX)
     }
 
     while(wIndex < size){
-        float avg = 0;
+        double avg = 0;
         for (int i = 0; i < 5; i++) {
             avg += w[i] / 7;
         }
@@ -328,13 +349,13 @@ uint8_t* Uint8ToPixels(uint8_t* data, int nPixels){
     return pixels;
 }
 
-uint8_t* FloatToPixels(float* floats, int nPixels){
+uint8_t* DoubleToPixels(double* doubles, int nPixels){
     uint8_t* pixels = (uint8_t*)malloc(sizeof(uint8_t) * nPixels * 3);
 
     for (int i = 0; i < nPixels; i++){
-        pixels[i * 3] = uint8_t(floats[i]);
-        pixels[i * 3 + 1] = uint8_t(floats[i]);
-        pixels[i * 3 + 2] = uint8_t(floats[i]);
+        pixels[i * 3] = uint8_t(doubles[i]);
+        pixels[i * 3 + 1] = uint8_t(doubles[i]);
+        pixels[i * 3 + 2] = uint8_t(doubles[i]);
     }
 
     return pixels;
@@ -410,7 +431,7 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* 
 
 #if METHOD_PATTERN_4 == 2
 void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
-    const float MODULEOFFSET = 4.5;
+    const double MODULEOFFSET = 4.5;
     Vec3 bottomLeftDir = (Normalise(findersVec[0] - findersVec[1]) * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
     Vec3 topRightDir = (Normalise(findersVec[2] - findersVec[1]) * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
 
@@ -419,7 +440,7 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* 
 #endif
 
 Vec3* BoundingBox(FinderCandidate* finders){
-    const float MODULEOFFSET = 4.5;
+    const double MODULEOFFSET = 4.5;
 
     Vec3* bounds = (Vec3*)malloc(sizeof(Vec3) * 4);
     Vec3* findersVec = (Vec3*)malloc(sizeof(Vec3) * 3);
@@ -481,7 +502,7 @@ int main(){
 
     uint8_t* data = MatToBytes(image);
 
-    float* grey = Greyscale(data, nPixels);
+    double* grey = Greyscale(data, nPixels);
     uint8_t* threshold = Threshold(grey, image.rows, image.cols);
 
 
