@@ -5,6 +5,7 @@
 #include <vector>
 #include <stdio.h>
 #include "vector_helper.hpp"
+#include "profiling.hpp"
 
 using namespace cv;
 
@@ -50,34 +51,48 @@ double* GetBlurred(double* imageData, int nY, int nX){
 }
 
 uint8_t* Threshold(double* image, int nY, int nX){
+    Timer t = Timer();
+    t.StartTimer();
+
     uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t) * nY * nX);
     const double WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
     
+#if BLUR_FORMULA == 1
     double* blurred = GetBlurred(image, nY, nX);
+#endif
 
-    std::cout << "did blur";
+    std::cout << "did blur" << std::endl;
 
     for (int yy = 0; yy < nY; yy++){
+#if BLUR_FORMULA == 0
         double m = 0;
         for (int xi = -WINDOW_SIZE; xi <= WINDOW_SIZE; xi++){
             for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
                 m += image[GetIndexPadding(nY, nX, yy + yi, xi - 1)] / WINDOW_SCALE;
             }
         }
+#endif
         for (int xx = 0; xx < nX; xx++){
+#if BLUR_FORMULA == 0
             for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
                 m += image[GetIndexPadding(nY, nX, yy + yi, xx + WINDOW_SIZE)] / WINDOW_SCALE;
                 m -= image[GetIndexPadding(nY, nX, yy + yi, xx - WINDOW_SIZE)] / WINDOW_SCALE;
             }
+#endif
 
-            if (m != blurred[yy * nY + xx]){
-                std::cout << m << " " << blurred[yy * nX + xx] << std::endl;
-            }
+            // if (m != blurred[yy * nX + xx]){
+            //     std::cout << m << " " << blurred[yy * nX + xx] << std::endl;
+            // }
 
             if (image[yy * nX + xx] > 180){
                 threshold[yy * nX + xx] = 255;
             }else{
+#if BLUR_FORMULA == 0
                 if(image[yy * nX + xx] * 1.1 >= m - 10){
+#endif
+#if BLUR_FORMULA == 1
+                if(image[yy * nX + xx] * 1.1 >= blurred[yy * nX + xx] - 10){
+#endif
                     threshold[yy * nX + xx] = 255;
                 }else{
                     threshold[yy * nX + xx] = 0;
@@ -85,6 +100,8 @@ uint8_t* Threshold(double* image, int nY, int nX){
             }
         }
     }
+
+    std::cout << t.GetElapsed() << std::endl;
 
     return threshold;
 }
