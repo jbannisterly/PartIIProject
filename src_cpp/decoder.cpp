@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include "barcode_layout.hpp"
 #include "image_aux.hpp"
+#include "compressor.hpp"
 
 using namespace cv;
 
@@ -46,7 +47,13 @@ int main(){
 
     uint16_t messageLength = ((uint16_t*)bytePointer)[0];
 
-    for (int i = 2; i < messageLength / 8 + 2; i++){
-        std::cout << bytePointer[i];
+    struct DataLen decompressed = NoCompression::decompress(bytePointer + 2, messageLength / 8); 
+
+    // for (int i = 2; i < messageLength / 8 + 2; i++){
+    //     std::cout << bytePointer[i];
+    // }
+
+    for (int i = 0; i < decompressed.len; i++){
+        std::cout << decompressed.data[i];
     }
 }
