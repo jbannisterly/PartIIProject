@@ -13,7 +13,15 @@ uint8_t* EncodeMessage(char* message){
     uint16_t length = strlen(message);
 
     uint8_t* rawData = new uint8_t[length];
-    struct DataLen compressedData = NoCompression::compress(rawData, length);
+    struct DataLen compressedData = Compression::compress(rawData, length);
+    struct DataLen decompressedData = Compression::decompress(compressedData.data, compressedData.len);
+
+    std::cout << std::endl << length << " " << compressedData.len << " " << decompressedData.len << " length " << std::endl;
+
+    for (int i = 0; i < decompressedData.len; i++){
+        std::cout << int(decompressedData.data[i]);
+    }
+    std::cout << std::endl;
 
     uint8_t* byteData = new uint8_t[compressedData.len];
     ((uint16_t*)byteData)[0] = compressedData.len << 3; // convert to number of bits
@@ -70,7 +78,7 @@ uint8_t* PixelsToBarcode(PixelData* pixels){
 
 
 int main(){
-    char* message = "Hello World 2\n";
+    char* message = "Hello World 1\nHello World 2\nHello World 3\n";
 
     uint8_t* byteData = EncodeMessage(message);
     PixelData* pixelData = MessageToPixels(byteData, strlen(message) + 2);
