@@ -63,9 +63,53 @@ class Galois{
     }
 };
 
-int main(){
-    Galois g1(7);
-    Galois g2(1 + 16);
+class Polynomial{
+    Galois irreducible;
+    std::vector<Galois> coefficients;
+    
+    public:
 
-    std::cout << (g2 % g1).data << std::endl;
+    Polynomial(Galois inIrreducible, std::vector<Galois> inCoefficients): 
+    irreducible{inIrreducible}, 
+    coefficients{inCoefficients}
+    {
+
+    }
+
+    Galois Evaluate(Galois inX){
+        Galois x(inX.data);
+        Galois y(coefficients[0]);
+
+        for (int i = 1; i < coefficients.size(); i++){
+            y = y + ((x * coefficients[i]) % irreducible);
+            std::cout << ((x * coefficients[i]) % irreducible).data << std::endl;
+            std::cout << x.data << " " << y.data << std::endl;
+            x = (x * inX) % irreducible;
+        }
+    
+        return y;
+    }
+};
+
+int main(){
+    Galois g1(6);
+    Galois g2(4);
+    Galois g3(2);
+
+    Galois irr(13);
+
+    std::vector<Galois> coefficients;
+
+    coefficients.push_back(g1);
+    coefficients.push_back(g2);
+    coefficients.push_back(g3);
+
+    Polynomial polynomial(irr, coefficients);
+
+    for (int i = 0; i < 3; i++){
+        Galois result = polynomial.Evaluate(Galois(i));
+        std::cout << i << " " << result.data << std::endl << std::endl;
+    }
+
+    std::cout << (Galois(8) % Galois(13)).data << std::endl;
 }
