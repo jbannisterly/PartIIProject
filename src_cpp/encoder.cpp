@@ -19,18 +19,6 @@ uint8_t* EncodeMessage(char* message){
     struct DataLen compressedData = Compression::compress(rawData, length);
     struct DataLen decompressedData = Compression::decompress(compressedData.data, compressedData.len);
 
-    std::cout << std::endl << length << " " << compressedData.len << " " << decompressedData.len << " length " << std::endl;
-
-    for (int i = 0; i < decompressedData.len; i++){
-        std::cout << int(decompressedData.data[i]);
-    }
-    std::cout << std::endl;
-
-    for (int i = 0; i < decompressedData.len; i++){
-        std::cout << decompressedData.data[i];
-    }
-    std::cout << std::endl;
-
     uint8_t* byteData = new uint8_t[compressedData.len];
     ((uint16_t*)byteData)[0] = compressedData.len << 3; // convert to number of bits
     std::memcpy(byteData + 2, compressedData.data, compressedData.len);

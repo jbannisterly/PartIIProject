@@ -18,15 +18,8 @@ struct DataLen Compression::compress(uint8_t* data, int len){
     }
 
     ulong compressedLen = len * 2;
-    std::cout << "compress\n original data:\n";
-        for (int i = 0; i < len; i++){
-        std::cout << int(data[i])  << std::endl;
-    }
-    std::cout << compress2(compressed, &compressedLen, data, uLongf(len), 2) << std::endl;
-    std::cout << "compressed data:\n";
-    for (int i = 0; i < len; i++){
-        std::cout << int(data[i]) << " " << int(compressed[i]) << " " << compressed[i] << std::endl;
-    }
+    compress2(compressed, &compressedLen, data, uLongf(len), 2);
+
     return DataLen(compressed, int(compressedLen));
 }
 
@@ -35,18 +28,11 @@ struct DataLen Compression::decompress(uint8_t* data, int len){
     uint8_t* decompressed;
     uLongf compressedLength = len;
 
-    std::cout << "decompress\n";
-
     int error = -1;
     while(error){
         decompressedSize *= 2;
         decompressed = (uint8_t*)malloc(sizeof(uint8_t) * decompressedSize);
         error = uncompress(decompressed, &decompressedSize, data, compressedLength);
-        std::cout << error << std::endl;
-    }
-
-    for (int i = 0; i < decompressedSize; i++){
-        std::cout << int(decompressed[i]);
     }
     
     return DataLen(decompressed, decompressedSize);
