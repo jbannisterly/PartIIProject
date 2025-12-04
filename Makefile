@@ -21,6 +21,10 @@ error:
 	g++ -o output/Error src_cpp/error_correction.cpp
 	./output/Error
 
+error2:
+	g++ -Ilibs/ -o output/Error2 src_cpp/error_correction_schifra.cpp
+	./output/Error2
+
 demo:
 	./output/Encoder
 	python src/distorter.py
