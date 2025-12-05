@@ -1,16 +1,17 @@
 #include "compressor.hpp"
 #include <cstdlib>
 #include <iostream>
+#include <stdint.h>
 
-struct DataLen NoCompression::compress(uint8_t* data, int len){
-    return DataLen(data, len);
+std::vector<uint8_t> NoCompression::compress(uint8_t* data, int len){
+    return std::vector<uint8_t> (data, data + len);
 }
 
-struct DataLen NoCompression::decompress(uint8_t* data, int len){
-    return DataLen(data, len);
+std::vector<uint8_t> NoCompression::decompress(uint8_t* data, int len){
+    return std::vector<uint8_t>(data, data + len);
 }
 
-struct DataLen Compression::compress(uint8_t* data, int len){
+std::vector<uint8_t> Compression::compress(uint8_t* data, int len){
     uint8_t* compressed = (uint8_t*)malloc(sizeof(uint8_t) * len * 2);
 
     for (int i = 0; i < len * 2; i++){
@@ -20,10 +21,13 @@ struct DataLen Compression::compress(uint8_t* data, int len){
     ulong compressedLen = len * 2;
     compress2(compressed, &compressedLen, data, uLongf(len), 2);
 
-    return DataLen(compressed, int(compressedLen));
+    std::vector<uint8_t> compressedVector(compressed, compressed + compressedLen);
+    free(compressed);
+
+    return compressedVector;
 }
 
-struct DataLen Compression::decompress(uint8_t* data, int len){
+std::vector<uint8_t> Compression::decompress(uint8_t* data, int len){
     uLongf decompressedSize = len * 2;
     uint8_t* decompressed;
     uLongf compressedLength = len;
@@ -35,5 +39,8 @@ struct DataLen Compression::decompress(uint8_t* data, int len){
         error = uncompress(decompressed, &decompressedSize, data, compressedLength);
     }
     
-    return DataLen(decompressed, decompressedSize);
+    std::vector<uint8_t> decompressedVector(decompressed, decompressed + decompressedSize);
+    free(decompressed);
+
+    return decompressedVector;
 }

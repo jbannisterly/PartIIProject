@@ -47,7 +47,7 @@ int main(){
 
     uint16_t messageLength = ((uint16_t*)bytePointer)[0];
 
-    struct DataLen decompressed = Compression::decompress(bytePointer + 2, messageLength / 8); 
+    std::vector<uint8_t> decompressed = Compression::decompress(bytePointer + 2, messageLength / 8); 
 
     for (int i = 2; i < messageLength / 8 + 2; i++){
         std::cout << int(bytePointer[i]);
@@ -55,8 +55,8 @@ int main(){
 
     std::cout << std::endl;
 
-    for (int i = 0; i < decompressed.len; i++){
-        std::cout << int(decompressed.data[i]);
+    for (int i = 0; i < decompressed.size(); i++){
+        std::cout << (char)decompressed[i];
     }
 
     std::cout << std::endl;

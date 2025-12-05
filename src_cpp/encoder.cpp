@@ -4,6 +4,8 @@
 #include <cstring>
 #include "barcode_layout.hpp"
 #include "compressor.hpp"
+#include "error_correction.hpp"
+#include <vector>
 
 using namespace cv;
 
@@ -16,12 +18,16 @@ uint8_t* EncodeMessage(char* message){
 
     memcpy(rawData, message, length);
 
-    struct DataLen compressedData = Compression::compress(rawData, length);
-    struct DataLen decompressedData = Compression::decompress(compressedData.data, compressedData.len);
+    std::vector<uint8_t> compressedData = Compression::compress(rawData, length);
+    std::vector<uint8_t> decompressedData = Compression::decompress(compressedData.data(), compressedData.size());
 
-    uint8_t* byteData = new uint8_t[compressedData.len];
-    ((uint16_t*)byteData)[0] = compressedData.len << 3; // convert to number of bits
-    std::memcpy(byteData + 2, compressedData.data, compressedData.len);
+    for (int i = 0; i < decompressedData.size(); i++){
+        std::cout << decompressedData[i] << "x";
+    }
+
+    uint8_t* byteData = new uint8_t[compressedData.size()];
+    ((uint16_t*)byteData)[0] = compressedData.size() << 3; // convert to number of bits
+    std::memcpy(byteData + 2, compressedData.data(), compressedData.size());
 
     return byteData;
 }
