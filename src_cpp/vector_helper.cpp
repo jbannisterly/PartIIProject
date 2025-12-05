@@ -19,12 +19,12 @@ bool Clockwise(Vec3 a, Vec3 b, Vec3 c){
     return cross.z < 0;
 }
 
-double Magnitude(Vec3 a){
-    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+double Vec3::Magnitude(){
+    return sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
 }
 
-Vec3 Normalise(Vec3 a){
-    Vec3 normalised = a * (1 / Magnitude(a));
+Vec3 Vec3::Normalise(){
+    Vec3 normalised = *this * (1 / this->Magnitude());
     return normalised;
 }
 
