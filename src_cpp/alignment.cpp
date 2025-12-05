@@ -449,8 +449,8 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* 
 #if METHOD_PATTERN_4 == 2
 void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
     const double MODULEOFFSET = 4.5;
-    Vec3 bottomLeftDir = (Normalise(findersVec[0] - findersVec[1]) * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
-    Vec3 topRightDir = (Normalise(findersVec[2] - findersVec[1]) * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
+    Vec3 bottomLeftDir = ((findersVec[0] - findersVec[1]).Normalise() * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
+    Vec3 topRightDir = ((findersVec[2] - findersVec[1]).Normalise() * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
 
     bounds[3] = Intersection(bottomLeftDir, topRightDir, bounds[0], bounds[2]);    
 }
@@ -468,11 +468,11 @@ Vec3* BoundingBox(FinderCandidate* finders){
 
     std::cout << finders[0].width;
 
-    bounds[0] = findersVec[0] + (Normalise(findersVec[0] - findersVec[2]) * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[1] = findersVec[1] + ((Normalise(findersVec[1] - findersVec[2]) + 
-                Normalise(findersVec[1] - findersVec[0]))
+    bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
+    bounds[1] = findersVec[1] + (((findersVec[1] - findersVec[2]).Normalise() + 
+                (findersVec[1] - findersVec[0]).Normalise())
                 * finders[1].width) * (MODULEOFFSET / 7);
-    bounds[2] = findersVec[2] + (Normalise(findersVec[2] - findersVec[0]) * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
+    bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[0]).Normalise() * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
 
     BoundingBoxMissingCorner(finders, findersVec, bounds);
 
@@ -505,6 +505,22 @@ Mat Project(Mat input, int* inputCoords, Position size){
     warpPerspective(input, output, transform, Size(size.x, size.y));
 
     return output;
+}
+
+int EstimateBarcodeSize(Vec3* bounds, Vec3* centres){
+    double centreDistanceH = (centres[1] - centres[2]).Magnitude();
+    double boundsDistanceH = (bounds[1] - bounds[2]).Magnitude();
+
+    double centreDistanceV = (centres[0] - centres[1]).Magnitude();
+    double boundsDistanceV = (bounds[0] - bounds[1]).Magnitude();
+
+
+    double sizeEstimateH = 8 * centreDistanceH / (boundsDistanceH - centreDistanceH) + 8;
+    double sizeEstimateV = 8 * centreDistanceV / (boundsDistanceV - centreDistanceV) + 8;
+
+    std::cout << "estimated width:  " << sizeEstimateV << std::endl;
+    std::cout << "estimated height: " << sizeEstimateH << std::endl;
+    return int((sizeEstimateH + sizeEstimateV) / 2);
 }
 
 int main(){
@@ -558,7 +574,6 @@ int main(){
             Debug[int(centres[i].x) + (int(centres[i].y) + j) * image.cols] = 255;
             Debug[int(bounds[i].x) + int(bounds[i].y) * image.cols + j] = 127;
             Debug[int(bounds[i].x) + (int(bounds[i].y) + j) * image.cols] = 127;
-
         }
     }
 
@@ -568,11 +583,18 @@ int main(){
     Mat debugImage(image.rows, image.cols, CV_8UC3);
     debugImage.data = pixels;
 
-    int* projectCoords = (int*)malloc(sizeof(int) * 8);
+    int* projectCoords = new int[8];
     for (int i = 0; i < 4; i++){
         projectCoords[i * 2] = bounds[i].x;
         projectCoords[i * 2 + 1] = bounds[i].y;
     }
+
+    Vec3* centresVec = new Vec3[3];
+    for (int i = 0; i < 4; i++){
+        centresVec[i] = Vec3(centresSorted[i].x, centresSorted[i].y, 0);
+    }
+
+    EstimateBarcodeSize(bounds, centresVec);
 
     outputImage = Project(image, projectCoords, Position(BARCODE_SIZE, BARCODE_SIZE)); 
 
