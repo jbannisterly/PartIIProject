@@ -6,10 +6,9 @@
 #include "compressor.hpp"
 #include "error_correction_schifra.hpp"
 #include <vector>
+#include "_config.hpp"
 
 using namespace cv;
-
-const int BARCODE_SIZE = 27;
 
 std::vector<uint8_t> EncodeMessage(char* message){
     uint16_t length = strlen(message);

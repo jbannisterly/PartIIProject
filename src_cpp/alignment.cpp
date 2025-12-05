@@ -574,7 +574,7 @@ int main(){
         projectCoords[i * 2 + 1] = bounds[i].y;
     }
 
-    outputImage = Project(image, projectCoords, Position(27, 27)); 
+    outputImage = Project(image, projectCoords, Position(BARCODE_SIZE, BARCODE_SIZE)); 
 
     imwrite(filePathOut, outputImage);
     imwrite(filePathDebug, debugImage);

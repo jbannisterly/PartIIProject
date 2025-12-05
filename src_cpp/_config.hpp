@@ -2,3 +2,4 @@
 #define TOLERANCE_PIXELS 20
 #define WINDOW_SIZE 200
 #define BLUR_FORMULA 1
+#define BARCODE_SIZE 48
