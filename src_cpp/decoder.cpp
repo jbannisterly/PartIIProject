@@ -3,6 +3,7 @@
 #include "barcode_layout.hpp"
 #include "image_aux.hpp"
 #include "compressor.hpp"
+#include "error_correction_schifra.hpp"
 
 using namespace cv;
 
@@ -45,13 +46,13 @@ int main(){
         }
     }
 
-    uint16_t messageLength = ((uint16_t*)bytePointer)[0];
+    uint16_t messageLength = ((uint16_t*)bytePointer)[0] / 8;
+    uint16_t errorCorrectionMessageLength = std::ceil((float)messageLength / 64) * 64;
 
-    std::vector<uint8_t> decompressed = Compression::decompress(bytePointer + 2, messageLength / 8); 
-
-    for (int i = 2; i < messageLength / 8 + 2; i++){
-        std::cout << int(bytePointer[i]);
-    }
+    std::vector<uint8_t> vectorData(bytePointer + 2, bytePointer + 2 + errorCorrectionMessageLength);
+    ErrorCorrection<64, 16> errorCorrector;
+    std::vector<uint8_t> deErrored = errorCorrector.Decode(vectorData);
+    std::vector<uint8_t> decompressed = Compression::decompress(deErrored.data(), messageLength); 
 
     std::cout << std::endl;
 

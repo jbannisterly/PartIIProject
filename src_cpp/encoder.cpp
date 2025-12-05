@@ -4,14 +4,14 @@
 #include <cstring>
 #include "barcode_layout.hpp"
 #include "compressor.hpp"
-#include "error_correction.hpp"
+#include "error_correction_schifra.hpp"
 #include <vector>
 
 using namespace cv;
 
 const int BARCODE_SIZE = 27;
 
-uint8_t* EncodeMessage(char* message){
+std::vector<uint8_t> EncodeMessage(char* message){
     uint16_t length = strlen(message);
 
     uint8_t* rawData = new uint8_t[length];
@@ -19,17 +19,17 @@ uint8_t* EncodeMessage(char* message){
     memcpy(rawData, message, length);
 
     std::vector<uint8_t> compressedData = Compression::compress(rawData, length);
-    std::vector<uint8_t> decompressedData = Compression::decompress(compressedData.data(), compressedData.size());
 
-    for (int i = 0; i < decompressedData.size(); i++){
-        std::cout << decompressedData[i] << "x";
-    }
-
-    uint8_t* byteData = new uint8_t[compressedData.size()];
+    ErrorCorrection<64, 16> error;
+    std::vector<uint8_t> errorCorrectionData = error.Encode(compressedData);
+    
+    uint8_t* byteData = new uint8_t[errorCorrectionData.size()];
     ((uint16_t*)byteData)[0] = compressedData.size() << 3; // convert to number of bits
-    std::memcpy(byteData + 2, compressedData.data(), compressedData.size());
+    std::memcpy(byteData + 2, errorCorrectionData.data(), errorCorrectionData.size());
 
-    return byteData;
+    std::vector vecData(byteData, byteData + errorCorrectionData.size());
+
+    return vecData;
 }
 
 struct PixelData{
@@ -82,8 +82,8 @@ uint8_t* PixelsToBarcode(PixelData* pixels){
 int main(){
     char* message = "Hello World 1\nHello World 2\nHello World 3\n";
 
-    uint8_t* byteData = EncodeMessage(message);
-    PixelData* pixelData = MessageToPixels(byteData, strlen(message) + 2);
+    std::vector<uint8_t> byteData = EncodeMessage(message);
+    PixelData* pixelData = MessageToPixels(byteData.data(), byteData.size());
     uint8_t* imageData = PixelsToBarcode(pixelData);
 
     Mat image(BARCODE_SIZE, BARCODE_SIZE, CV_8UC3);

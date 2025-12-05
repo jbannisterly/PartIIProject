@@ -10,8 +10,7 @@
 #include <cmath> 
 #include "error_correction.hpp"
 
-template<size_t blockLen, size_t fecLen> 
-std::vector<uint8_t> ErrorCorrection<blockLen, fecLen>::Encode(std::vector<uint8_t> rawData){
+std::vector<uint8_t> ErrorCorrection::Encode(std::vector<uint8_t> rawData){
     int nBlocks = std::ceil((float)rawData.size() / (blockLen - fecLen));
 
     std::vector<uint8_t> encodedData;
@@ -41,8 +40,7 @@ std::vector<uint8_t> ErrorCorrection<blockLen, fecLen>::Encode(std::vector<uint8
     return encodedData;
 }
 
-template<size_t blockLen, size_t fecLen> 
-std::vector<uint8_t> ErrorCorrection<blockLen, fecLen>::Decode(std::vector<uint8_t> encodedData){
+std::vector<uint8_t> ErrorCorrection::Decode(std::vector<uint8_t> encodedData){
     int nBlocks = encodedData.size() / blockLen;
 
     std::vector<uint8_t> decodedData;
@@ -66,30 +64,4 @@ std::vector<uint8_t> ErrorCorrection<blockLen, fecLen>::Decode(std::vector<uint8
     }
 
     return decodedData;
-}
-
-
-int main(){
-    ErrorCorrection<128, 64> err;
-
-    std::vector<uint8_t> input;
-
-    for (int i = 0; i < 1000; i++) {
-        input.push_back((i * 3) % 78);
-    }
-
-    std::vector<uint8_t> output = err.Encode(input);
-
-    for (int i = 100; i < 120; i++){ // noise
-        output[i] = 88;
-    }
-
-    std::vector<uint8_t> decoded = err.Decode(output);
-
-    std::cout << decoded.size() << std::endl;
-    for (int i = 0; i < input.size(); i++) {
-        if (input[i] != decoded[i]) std::cout << "fail at " << i << std::endl;
-    }
-
-    return 0;
 }
