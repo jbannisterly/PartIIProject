@@ -24,6 +24,7 @@ for i in range(len(background)):
     for j in range(len(background[i])):
         background[i][j][0] = (noise.snoise2(i / 200, j / 200) * 0.5 + 0.5) * 256
 
+
 background = np.float32(cv2.cvtColor(np.float32(background), cv2.COLOR_HSV2RGB))
 
 barcode_background = barcode_proj * mask + background * (1-mask)
@@ -33,6 +34,15 @@ for i in range(len(barcode_background)):
         barcode_background[i][j][0] += (noise.snoise3(i * 2, j * 2, 0) * 0.1)
         barcode_background[i][j][1] += (noise.snoise3(i * 2, j * 2, 1) * 0.1)
         barcode_background[i][j][2] += (noise.snoise3(i * 2, j * 2, 2) * 0.1)
+
+for i in range(70):
+    for j in range(70):
+        barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][0] = 1
+        barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][1] = 1
+        barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][2] = 0
+
+
+
 
 
 cv2.imwrite("output/output_distorted.png", np.uint8(np.clip(barcode_background, 0, 255/256) * 256))
