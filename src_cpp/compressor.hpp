@@ -25,3 +25,11 @@ class Compression{
     static std::vector<uint8_t> compress(uint8_t* data, int len);
     static std::vector<uint8_t> decompress(uint8_t* data, int len);
 };
+
+class ExceptionDecompression: std::exception {
+    public:
+    
+    const char* what() const noexcept override{
+        return "Cannot decompress data.";
+    }
+};

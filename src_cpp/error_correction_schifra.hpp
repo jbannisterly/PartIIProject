@@ -50,7 +50,7 @@ class ErrorCorrection{
         std::vector<uint8_t> decodedData;
 
         schifra::galois::field field(8, schifra::galois::primitive_polynomial_size06, schifra::galois::primitive_polynomial06);
-       schifra::reed_solomon::decoder<blockLen, fecLen, (blockLen - fecLen)> decoder(field, 120);
+        schifra::reed_solomon::decoder<blockLen, fecLen, (blockLen - fecLen)> decoder(field, 120);
 
         schifra::reed_solomon::block<blockLen, fecLen> block;
 
@@ -59,7 +59,6 @@ class ErrorCorrection{
             std::string fec((char*)encodedData.data() + i * blockLen + blockLen - fecLen, fecLen); 
 
             block = schifra::reed_solomon::block<blockLen, fecLen>(data, fec);
-
             decoder.decode(block);
 
             for (int j = 0; j < (blockLen - fecLen); j++){

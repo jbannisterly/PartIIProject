@@ -29,14 +29,18 @@ std::vector<uint8_t> Compression::compress(uint8_t* data, int len){
 
 std::vector<uint8_t> Compression::decompress(uint8_t* data, int len){
     uLongf decompressedSize = len * 2;
-    uint8_t* decompressed;
+    uint8_t* decompressed = (uint8_t*)malloc(sizeof(uint8_t));
     uLongf compressedLength = len;
 
     int error = -1;
     while(error){
+        free(decompressed);
         decompressedSize *= 2;
         decompressed = (uint8_t*)malloc(sizeof(uint8_t) * decompressedSize);
         error = uncompress(decompressed, &decompressedSize, data, compressedLength);
+        if (error == Z_DATA_ERROR) {
+            throw new ExceptionDecompression();
+        }
     }
     
     std::vector<uint8_t> decompressedVector(decompressed, decompressed + decompressedSize);

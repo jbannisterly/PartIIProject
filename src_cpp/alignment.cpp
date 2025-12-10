@@ -459,8 +459,8 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* 
 Vec3* BoundingBox(FinderCandidate* finders){
     const double MODULEOFFSET = 4.5;
 
+    Vec3* findersVec = new Vec3[3];
     Vec3* bounds = (Vec3*)malloc(sizeof(Vec3) * 4);
-    Vec3* findersVec = (Vec3*)malloc(sizeof(Vec3) * 3);
     
     for (int i = 0; i < 3; i++){
         findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
@@ -475,8 +475,6 @@ Vec3* BoundingBox(FinderCandidate* finders){
     bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[0]).Normalise() * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
 
     BoundingBoxMissingCorner(finders, findersVec, bounds);
-
-    free(findersVec);
 
     return bounds;
 }
