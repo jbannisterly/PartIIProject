@@ -11,7 +11,7 @@ encoder:
 	./output/Encoder
 
 alignment:
-	g++ -Wall -o output/Alignment src_cpp/alignment.cpp src_cpp/image_aux.cpp src_cpp/vector_helper.cpp src_cpp/profiling.cpp `pkg-config --cflags --libs opencv4`
+	g++ -Wall -g -o output/Alignment src_cpp/alignment.cpp src_cpp/image_aux.cpp src_cpp/vector_helper.cpp src_cpp/profiling.cpp `pkg-config --cflags --libs opencv4`
 	./output/Alignment
 
 profiling:

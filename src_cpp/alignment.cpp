@@ -162,9 +162,6 @@ std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX)
             double centre = wIndex - w[4] - w[3] - w[2] / 2;
             double width = avg * 7;
             finder.push_back(FinderCandidate(centre / sizeX, centre - int(centre / sizeX) * sizeX, width));
-            // for (int counter = int(-avg * 7 / 2); counter < avg * 7 / 2; counter++){
-            //     // data[centre + counter] = 127; // visualise centre
-            // }
         }
 
         // Read another
@@ -176,6 +173,15 @@ std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX)
             wIndex += w[i];
         }
     }
+
+    // std::cout << "Finder size: " << finder.size() << std::endl;
+
+    // for (int i = 0; i < finder.size(); i++){
+    //     std::cout << ((finder))[i].y;
+    // }
+    // std::cout << std::endl;
+
+    // std::cout << "Returning finder" << std::endl;
 
     return finder;
 } 
@@ -235,6 +241,8 @@ class FinderGroup{
     std::vector<FinderCandidate> FinderPatternVertical(VerticalData vertical){
         Position* startPosition = VerticalOffset();
         std::vector<FinderCandidate> verticalCandidates = FinderPatterns(vertical.data, vertical.width, vertical.height);
+
+        std::cout << verticalCandidates.size();
 
         for (int i = 0; i < verticalCandidates.size(); i++){
             double temp;
@@ -333,8 +341,9 @@ std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> candidates){
     for (int i = 0; i < candidates.size(); i++){
         int j = 0;
         bool newNeeded = true;
+        std::cout << "Iteration " << i << std::endl;
         while(j < finderGroup.size()){
-            if (finderGroup[j].TryAddCandidate(candidates[i])){
+            if (finderGroup.at(j).TryAddCandidate(candidates[i])){
                 j = finderGroup.size();
                 newNeeded = false;
             }
@@ -342,7 +351,7 @@ std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> candidates){
         }
         if (newNeeded) {
             FinderGroup newGroup = FinderGroup();
-            newGroup.TryAddCandidate(candidates[i]);
+            newGroup.TryAddCandidate(candidates.at(i));
             finderGroup.push_back(newGroup);
         }
     }
@@ -447,7 +456,7 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* 
 #endif
 
 #if METHOD_PATTERN_4 == 2
-void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
+void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, std::array<Vec3, 4> &bounds){
     const double MODULEOFFSET = 4.5;
     Vec3 bottomLeftDir = ((findersVec[0] - findersVec[1]).Normalise() * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
     Vec3 topRightDir = ((findersVec[2] - findersVec[1]).Normalise() * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
@@ -456,11 +465,11 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* 
 }
 #endif
 
-Vec3* BoundingBox(FinderCandidate* finders){
+std::array<Vec3, 4> BoundingBox(FinderCandidate* finders){
     const double MODULEOFFSET = 4.5;
 
-    Vec3* findersVec = new Vec3[3];
-    Vec3* bounds = (Vec3*)malloc(sizeof(Vec3) * 4);
+    Vec3 findersVec[3];
+    std::array<Vec3, 4> bounds;
     
     for (int i = 0; i < 3; i++){
         findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
@@ -521,29 +530,32 @@ int EstimateBarcodeSize(Vec3* bounds, Vec3* centres){
     return int((sizeEstimateH + sizeEstimateV) / 2);
 }
 
-int main(){
-    const char* filePath = "output/output_distorted.png";
-    const char* filePathOut = "output/output_align.png";
-    const char* filePathDebug = "output/output_debug.png";
-
-    Mat image = imread(filePath);
-    int nPixels = image.cols * image.rows; 
+Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
+    int nPixels = inputImage.cols * inputImage.rows; 
     Debug = (uint8_t*)malloc(sizeof(uint8_t) * nPixels);
     for(int i = 0; i < nPixels; i++) Debug[i] = 0;
 
-    uint8_t* data = MatToBytes(image);
+    uint8_t* data = MatToBytes(inputImage);
 
     double* grey = Greyscale(data, nPixels);
-    uint8_t* threshold = Threshold(grey, image.rows, image.cols);
+    uint8_t* threshold = Threshold(grey, inputImage.rows, inputImage.cols);
 
+    std::cout << "Threshold" << std::endl;
 
-    std::vector<FinderCandidate> finder = FinderPatterns(threshold, image.rows, image.cols);
+    std::vector<FinderCandidate> finder = FinderPatterns(threshold, inputImage.rows, inputImage.cols);
+
+    std::cout << "Copied finder" << std::endl;
+
+    std::cout << finder.size() << std::endl;
+
     std::vector<FinderGroup> finderGroups = GroupFinders(finder);
+
+    std::cout << "Finder Groups" << std::endl;
 
     std::vector<int> finderGroupsValid;
 
     for (int i = 0; i < finderGroups.size(); i++){
-        bool valid = finderGroups[i].isValid(data, image.cols, image.rows);
+        bool valid = finderGroups[i].isValid(data, inputImage.cols, inputImage.rows);
         if (valid){
             finderGroupsValid.push_back(i);
         }
@@ -562,40 +574,74 @@ int main(){
     std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValid);
     FinderCandidate* centresSorted = OrderCentres(centres);
 
-    Vec3* bounds = BoundingBox(centresSorted);
+    Vec3* bounds = BoundingBox(centresSorted).data();
 
     for (int i = 0; i < 4; i++){
         std::cout << bounds[i].x << "," << bounds[i].y << std::endl;
         std::cout << centres[i].x << "," << centres[i].y << std::endl;
         for (int j = -10; j < 10; j++){
-            Debug[int(centres[i].x) + int(centres[i].y) * image.cols + j] = 255;
-            Debug[int(centres[i].x) + (int(centres[i].y) + j) * image.cols] = 255;
-            Debug[int(bounds[i].x) + int(bounds[i].y) * image.cols + j] = 127;
-            Debug[int(bounds[i].x) + (int(bounds[i].y) + j) * image.cols] = 127;
+            Debug[int(centres[i].x) + int(centres[i].y) * inputImage.cols + j] = 255;
+            Debug[int(centres[i].x) + (int(centres[i].y) + j) * inputImage.cols] = 255;
+            Debug[int(bounds[i].x) + int(bounds[i].y) * inputImage.cols + j] = 127;
+            Debug[int(bounds[i].x) + (int(bounds[i].y) + j) * inputImage.cols] = 127;
         }
     }
 
     uint8_t* pixels = Uint8ToPixels(threshold, nPixels);
 
     Mat outputImage;
-    Mat debugImage(image.rows, image.cols, CV_8UC3);
+    Mat debugImage(inputImage.rows, inputImage.cols, CV_8UC3);
     debugImage.data = pixels;
 
-    int* projectCoords = new int[8];
+    int projectCoords[8];
     for (int i = 0; i < 4; i++){
         projectCoords[i * 2] = bounds[i].x;
         projectCoords[i * 2 + 1] = bounds[i].y;
     }
 
-    Vec3* centresVec = new Vec3[3];
+    Vec3 centresVec[3];
     for (int i = 0; i < 4; i++){
         centresVec[i] = Vec3(centresSorted[i].x, centresSorted[i].y, 0);
     }
 
+    const int adjustmentDirection[8] = {-1, 1, -1, -1, 1, -1, 1, 1};
+    int* projectCoordsAdjusted = new int[8];
+    for (int i = 0; i < 8; i++){
+        projectCoordsAdjusted[i] = projectCoords[i] + pixelOffsetExpand * adjustmentDirection[i];
+    }
+
     EstimateBarcodeSize(bounds, centresVec);
 
-    outputImage = Project(image, projectCoords, Position(BARCODE_SIZE, BARCODE_SIZE)); 
+    std::cout << "Estimated size" << std::endl;
 
-    imwrite(filePathOut, outputImage);
-    imwrite(filePathDebug, debugImage);
+    outputImage = Project(inputImage, projectCoordsAdjusted, Position(projectionSize, projectionSize)); 
+
+    std::cout << "Projected image" << std::endl;
+
+    // imwrite("output/output_debug2.png", debugImage);
+
+    return outputImage;
 }
+
+int main(){
+    const char* filePath = "output/output_distorted.png";
+    const char* filePathOut = "output/output_align.png";
+    const char* filePathDebug = "output/output_debug.png";
+    const int ITERATIONS = 1;
+
+    Mat image = imread(filePath);
+    Mat intermediateImage = AlignImage(image, image.rows, 100);
+    std::cout << "writing the first image" << std::endl;
+    imwrite(filePathDebug, intermediateImage);
+    
+    Mat outputImage = AlignImage(intermediateImage, BARCODE_SIZE, 0);
+        std::cout << "writing the second image" << std::endl;
+    imwrite(filePathOut, outputImage);
+}
+
+
+/*
+
+
+
+*/
