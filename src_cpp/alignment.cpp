@@ -9,7 +9,7 @@
 
 using namespace cv;
 
-uint8_t* Debug;
+std::vector<uint8_t> Debug;
 
 struct Position{
     double x;
@@ -21,11 +21,12 @@ struct Position{
     }
 };
 
-double* Greyscale(uint8_t* image, int pixels){
-    double* grey = (double*)malloc(sizeof(double) * pixels);
+std::vector<double> Greyscale(uint8_t* image, int pixels){
+    std::vector<double> grey;
+    grey.reserve(pixels);
 
     for (int i = 0; i < pixels; i++){
-        grey[i] = (77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256;
+        grey.push_back((77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256);
     }
 
     return grey;
@@ -37,8 +38,8 @@ int GetIndexPadding(int nY, int nX, int y, int x){
     return yy * nX + xx;
 }
 
-double* GetBlurred(double* imageData, int nY, int nX){
-    Mat data = Mat(nY, nX, CV_64F, imageData);
+double* GetBlurred(std::vector<double> imageData, int nY, int nX){
+    Mat data = Mat(nY, nX, CV_64F, imageData.data());
     Mat* blurred = new Mat(nY, nX, CV_64F);
 
     std::cout << "pre box filter" << std::endl;
@@ -50,11 +51,12 @@ double* GetBlurred(double* imageData, int nY, int nX){
     return (double*)blurred->ptr();
 }
 
-uint8_t* Threshold(double* image, int nY, int nX){
+std::vector<uint8_t> Threshold(std::vector<double> image, int nY, int nX){
     Timer t = Timer();
     t.StartTimer();
 
-    uint8_t* threshold = (uint8_t*)malloc(sizeof(uint8_t) * nY * nX);
+    std::vector<uint8_t> threshold;
+    threshold.reserve(nY * nX);
     const double WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
     
 #if BLUR_FORMULA == 1
@@ -85,7 +87,7 @@ uint8_t* Threshold(double* image, int nY, int nX){
             // }
 
             if (image[yy * nX + xx] > 180){
-                threshold[yy * nX + xx] = 255;
+                threshold.push_back(255);
             }else{
 #if BLUR_FORMULA == 0
                 if(image[yy * nX + xx] * 1.1 >= m - 10){
@@ -93,9 +95,9 @@ uint8_t* Threshold(double* image, int nY, int nX){
 #if BLUR_FORMULA == 1
                 if(image[yy * nX + xx] * 1.1 >= blurred[yy * nX + xx] - 10){
 #endif
-                    threshold[yy * nX + xx] = 255;
+                    threshold.push_back(255);
                 }else{
-                    threshold[yy * nX + xx] = 0;
+                    threshold.push_back(0);
                 }
             }
         }
@@ -106,9 +108,10 @@ uint8_t* Threshold(double* image, int nY, int nX){
     return threshold;
 }
 
-int CountSame(uint8_t* data, int index, int size){
+int CountSame(std::vector<uint8_t> data, int index, int size){
     int i = 0; 
     uint8_t value = data[index];
+
     while(index + i < size && data[index + i] == value){
         i++;
     }
@@ -117,18 +120,21 @@ int CountSame(uint8_t* data, int index, int size){
 }
 
 struct FinderCandidate{
-    double y;
-    double x;
-    double width;
+    double y = 0;
+    double x = 0;
+    double width = 0;
 
-    FinderCandidate(double initY, double initX, double initW){
-        y = initY;
-        x = initX;
-        width = initW;
-    }
+    FinderCandidate() {}
+
+    FinderCandidate(double initY, double initX, double initW) :
+    y { initY },
+    x { initX },
+    width { initW }
+    {}
+
 };
 
-std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX){
+std::vector<FinderCandidate> FinderPatterns(std::vector<uint8_t> data, int sizeY, int sizeX){
     int index = 0;
     int w[5];
     int wIndex = 0;
@@ -187,7 +193,7 @@ std::vector<FinderCandidate> FinderPatterns(uint8_t* data, int sizeY, int sizeX)
 } 
 
 struct VerticalData{
-    uint8_t* data;
+    std::vector<uint8_t> data;
     int height;
     int width;
 };
@@ -225,13 +231,12 @@ class FinderGroup{
         sample.height = centre.width * 11 / 7;
         sample.width = centre.width * 2.6 / 7;
 
-        sample.data = (uint8_t*)malloc(sizeof(uint8_t) * sample.height * sample.width);
+        sample.data = std::vector<uint8_t>();
+        sample.data.reserve(sample.height * sample.width);
 
-        int index = 0;
         for (int xx = startX; xx < startX + sample.width; xx++){
             for (int yy = startY; yy < startY + sample.height; yy++){
-                sample.data[index] = data[yy * dataX + xx];
-                index++;
+                sample.data.push_back(data[yy * dataX + xx]);
             }
         }
 
@@ -241,8 +246,6 @@ class FinderGroup{
     std::vector<FinderCandidate> FinderPatternVertical(VerticalData vertical){
         Position* startPosition = VerticalOffset();
         std::vector<FinderCandidate> verticalCandidates = FinderPatterns(vertical.data, vertical.width, vertical.height);
-
-        std::cout << verticalCandidates.size();
 
         for (int i = 0; i < verticalCandidates.size(); i++){
             double temp;
@@ -276,6 +279,8 @@ class FinderGroup{
 
     bool isValid(uint8_t* imageData, int dataX, int dataY){
         VerticalData vertical = VerticalSample(imageData, dataX, dataY);
+
+        if (vertical.data.size() == 0) return false;
         verticalCandidates = FinderPatternVertical(vertical);
 
         bool verticalFound = verticalCandidates.size() > 0;
@@ -341,7 +346,6 @@ std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> candidates){
     for (int i = 0; i < candidates.size(); i++){
         int j = 0;
         bool newNeeded = true;
-        std::cout << "Iteration " << i << std::endl;
         while(j < finderGroup.size()){
             if (finderGroup.at(j).TryAddCandidate(candidates[i])){
                 j = finderGroup.size();
@@ -359,10 +363,11 @@ std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> candidates){
     return finderGroup;
 }
 
-uint8_t* Uint8ToPixels(uint8_t* data, int nPixels){
-    uint8_t* pixels = (uint8_t*)malloc(sizeof(uint8_t) * nPixels * 3);
+std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> data){
+    std::vector<uint8_t> pixels;
+    pixels.reserve(data.size() * 3);
 
-    for (int i = 0; i < nPixels; i++){
+    for (int i = 0; i < data.size(); i++){
         if (Debug[i] == 0){
             pixels[i * 3] = data[i];
             pixels[i * 3 + 1] = data[i];
@@ -375,9 +380,10 @@ uint8_t* Uint8ToPixels(uint8_t* data, int nPixels){
     return pixels;
 }
 
-uint8_t* DoubleToPixels(double* doubles, int nPixels){
-    uint8_t* pixels = (uint8_t*)malloc(sizeof(uint8_t) * nPixels * 3);
-
+std::vector<uint8_t> DoubleToPixels(double* doubles, int nPixels){
+    std::vector<uint8_t> pixels;
+    pixels.reserve(nPixels * 3);
+    
     for (int i = 0; i < nPixels; i++){
         pixels[i * 3] = uint8_t(doubles[i]);
         pixels[i * 3 + 1] = uint8_t(doubles[i]);
@@ -407,7 +413,7 @@ int DistanceSquared(FinderCandidate a, FinderCandidate b){
     return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 }
 
-FinderCandidate* OrderCentres(std::vector<FinderCandidate> centres){
+std::array<FinderCandidate, 3> OrderCentres(std::vector<FinderCandidate> centres){
     int sumDistanceSquared[3];
     for (int i = 0; i < 3; i++){
         sumDistanceSquared[i] = 0;
@@ -436,7 +442,7 @@ FinderCandidate* OrderCentres(std::vector<FinderCandidate> centres){
     // |
     // p0
 
-    FinderCandidate* candidatesSorted = (FinderCandidate*)malloc(sizeof(FinderCandidate) * 3);
+    std::array<FinderCandidate, 3> candidatesSorted;
     candidatesSorted[1] = centres[minIndex];
     if (clockwise){
         candidatesSorted[0] = centres[(minIndex + 2) % 3];
@@ -456,7 +462,7 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* 
 #endif
 
 #if METHOD_PATTERN_4 == 2
-void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, std::array<Vec3, 4> &bounds){
+void BoundingBoxMissingCorner(std::array<FinderCandidate, 3> &finders, std::array<Vec3, 3>  &findersVec, std::array<Vec3, 4> &bounds){
     const double MODULEOFFSET = 4.5;
     Vec3 bottomLeftDir = ((findersVec[0] - findersVec[1]).Normalise() * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
     Vec3 topRightDir = ((findersVec[2] - findersVec[1]).Normalise() * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
@@ -465,17 +471,27 @@ void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, std::a
 }
 #endif
 
-std::array<Vec3, 4> BoundingBox(FinderCandidate* finders){
+#if METHOD_PATTERN_4 == 3
+void BoundingBoxMissingCorner(std::array<FinderCandidate, 3> &finders, std::array<Vec3, 3>  &findersVec, std::array<Vec3, 4> &bounds){
+    const double MODULEOFFSET = 4.5;
+    Vec3 bottomLeftDir = bounds[1] - bounds[2];
+    Vec3 topRightDir = bounds[1] - bounds[0];
+
+    bounds[3] = Intersection(bottomLeftDir, topRightDir, bounds[0], bounds[2]);    
+}
+#endif
+
+std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders){
     const double MODULEOFFSET = 4.5;
 
-    Vec3 findersVec[3];
+    std::array<Vec3, 3> findersVec;
     std::array<Vec3, 4> bounds;
     
     for (int i = 0; i < 3; i++){
         findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
     }
 
-    std::cout << finders[0].width;
+    std::cout << finders[0].width << std::endl;
 
     bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
     bounds[1] = findersVec[1] + (((findersVec[1] - findersVec[2]).Normalise() + 
@@ -507,14 +523,14 @@ Mat Project(Mat input, int* inputCoords, Position size){
 
     Mat transform = getPerspectiveTransform(startCoords, endCoords);
 
-    std::cout << transform;
+    std::cout << transform << std::endl;
 
-    warpPerspective(input, output, transform, Size(size.x, size.y));
+    warpPerspective(input.clone(), output, transform, Size(size.x, size.y));
 
     return output;
 }
 
-int EstimateBarcodeSize(Vec3* bounds, Vec3* centres){
+int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     double centreDistanceH = (centres[1] - centres[2]).Magnitude();
     double boundsDistanceH = (bounds[1] - bounds[2]).Magnitude();
 
@@ -532,13 +548,13 @@ int EstimateBarcodeSize(Vec3* bounds, Vec3* centres){
 
 Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
     int nPixels = inputImage.cols * inputImage.rows; 
-    Debug = (uint8_t*)malloc(sizeof(uint8_t) * nPixels);
+    Debug.reserve(nPixels);
     for(int i = 0; i < nPixels; i++) Debug[i] = 0;
 
     uint8_t* data = MatToBytes(inputImage);
 
-    double* grey = Greyscale(data, nPixels);
-    uint8_t* threshold = Threshold(grey, inputImage.rows, inputImage.cols);
+    std::vector<double> grey = Greyscale(data, nPixels);
+    std::vector<uint8_t> threshold = Threshold(grey, inputImage.rows, inputImage.cols);
 
     std::cout << "Threshold" << std::endl;
 
@@ -551,6 +567,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
     std::vector<FinderGroup> finderGroups = GroupFinders(finder);
 
     std::cout << "Finder Groups" << std::endl;
+    std::cout << finderGroups.size() << std::endl;
 
     std::vector<int> finderGroupsValid;
 
@@ -560,6 +577,8 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
             finderGroupsValid.push_back(i);
         }
     }
+
+    std::cout << finderGroupsValid.size() << std::endl;
 
     int size[finderGroups.size()];
 
@@ -571,12 +590,19 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
         return size[a] > size[b];
     });
 
+    std::cout << "sorted" << std::endl;
+
     std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValid);
-    FinderCandidate* centresSorted = OrderCentres(centres);
+    std::array<FinderCandidate, 3> centresSorted = OrderCentres(centres);
 
-    Vec3* bounds = BoundingBox(centresSorted).data();
+    std::cout << "centres" << std::endl;
 
-    for (int i = 0; i < 4; i++){
+    std::array<Vec3, 4> bounds = BoundingBox(centresSorted);
+
+    // TODO: check bounds of bounds and centres so they are in the image
+    // centres is length 3, but 4 are accessed
+
+    for (int i = 0; i < 3; i++){
         std::cout << bounds[i].x << "," << bounds[i].y << std::endl;
         std::cout << centres[i].x << "," << centres[i].y << std::endl;
         for (int j = -10; j < 10; j++){
@@ -587,11 +613,9 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
         }
     }
 
-    uint8_t* pixels = Uint8ToPixels(threshold, nPixels);
+    std::vector<uint8_t> pixels = Uint8ToPixels(threshold);
 
     Mat outputImage;
-    Mat debugImage(inputImage.rows, inputImage.cols, CV_8UC3);
-    debugImage.data = pixels;
 
     int projectCoords[8];
     for (int i = 0; i < 4; i++){
@@ -618,30 +642,32 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
 
     std::cout << "Projected image" << std::endl;
 
-    // imwrite("output/output_debug2.png", debugImage);
+    Mat debugImage(inputImage.rows, inputImage.cols, CV_8UC3, pixels.data());
+    imwrite("output/output_debug2.png", debugImage);
 
     return outputImage;
 }
 
 int main(){
+    std::string filePathOut = "output/output_align_";
     const char* filePath = "output/output_distorted.png";
-    const char* filePathOut = "output/output_align.png";
+    // const char* filePathOut = "output/output_align_";
+    const char* filePathOutFinal = "ouput/output_align.png";
     const char* filePathDebug = "output/output_debug.png";
-    const int ITERATIONS = 1;
+    const int ITERATIONS = 3;
 
     Mat image = imread(filePath);
-    Mat intermediateImage = AlignImage(image, image.rows, 100);
-    std::cout << "writing the first image" << std::endl;
-    imwrite(filePathDebug, intermediateImage);
+    Mat nextImage;
+
+    for (int i = 0; i < ITERATIONS; i++){
+        nextImage = AlignImage(image.clone(), image.rows, 100);
+        imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
+        image = nextImage;
+    }
+
     
-    Mat outputImage = AlignImage(intermediateImage, BARCODE_SIZE, 0);
-        std::cout << "writing the second image" << std::endl;
-    imwrite(filePathOut, outputImage);
+    Mat outputImage = AlignImage(nextImage, BARCODE_SIZE, 0);
+    std::cout << "writing the final image" << std::endl;
+    imwrite(filePathOutFinal, outputImage);
+    std::cout << "Finished program" << std::endl;
 }
-
-
-/*
-
-
-
-*/
