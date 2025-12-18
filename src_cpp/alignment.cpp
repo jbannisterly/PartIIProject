@@ -23,10 +23,10 @@ struct Position{
 
 std::vector<double> Greyscale(uint8_t* image, int pixels){
     std::vector<double> grey;
-    grey.reserve(pixels);
+    grey.reserve(pixels);;
 
     for (int i = 0; i < pixels; i++){
-        grey.push_back((77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256);
+        grey[i] = ((77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256);
     }
 
     return grey;
@@ -38,7 +38,7 @@ int GetIndexPadding(int nY, int nX, int y, int x){
     return yy * nX + xx;
 }
 
-double* GetBlurred(std::vector<double> imageData, int nY, int nX){
+double* GetBlurred(std::vector<double> &imageData, int nY, int nX){
     Mat data = Mat(nY, nX, CV_64F, imageData.data());
     Mat* blurred = new Mat(nY, nX, CV_64F);
 
@@ -51,7 +51,7 @@ double* GetBlurred(std::vector<double> imageData, int nY, int nX){
     return (double*)blurred->ptr();
 }
 
-std::vector<uint8_t> Threshold(std::vector<double> image, int nY, int nX){
+std::vector<uint8_t> Threshold(std::vector<double> &image, int nY, int nX){
     Timer t = Timer();
     t.StartTimer();
 
@@ -108,7 +108,7 @@ std::vector<uint8_t> Threshold(std::vector<double> image, int nY, int nX){
     return threshold;
 }
 
-int CountSame(std::vector<uint8_t> data, int index, int size){
+int CountSame(std::vector<uint8_t> &data, int index, int size){
     int i = 0; 
     uint8_t value = data[index];
 
@@ -134,7 +134,7 @@ struct FinderCandidate{
 
 };
 
-std::vector<FinderCandidate> FinderPatterns(std::vector<uint8_t> data, int sizeY, int sizeX){
+std::vector<FinderCandidate> FinderPatterns(std::vector<uint8_t> &data, int sizeY, int sizeX){
     int index = 0;
     int w[5];
     int wIndex = 0;
@@ -340,7 +340,7 @@ FinderCandidate FinderGroup::CentreRefined(){
     return centre;
 }
 
-std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> candidates){
+std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> &candidates){
     std::vector<FinderGroup> finderGroup;
 
     for (int i = 0; i < candidates.size(); i++){
@@ -363,7 +363,7 @@ std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> candidates){
     return finderGroup;
 }
 
-std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> data){
+std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> &data){
     std::vector<uint8_t> pixels;
     pixels.reserve(data.size() * 3);
 
@@ -393,7 +393,7 @@ std::vector<uint8_t> DoubleToPixels(double* doubles, int nPixels){
     return pixels;
 }
 
-std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> finderGroups, std::vector<int> finderGroupsValid){
+std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> &finderGroups, std::vector<int> &finderGroupsValid){
     std::vector<FinderCandidate> centres;
 
     int maxSize = finderGroups[finderGroupsValid[0]].size();
@@ -413,7 +413,7 @@ int DistanceSquared(FinderCandidate a, FinderCandidate b){
     return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 }
 
-std::array<FinderCandidate, 3> OrderCentres(std::vector<FinderCandidate> centres){
+std::array<FinderCandidate, 3> OrderCentres(std::vector<FinderCandidate> &centres){
     int sumDistanceSquared[3];
     for (int i = 0; i < 3; i++){
         sumDistanceSquared[i] = 0;

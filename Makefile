@@ -14,6 +14,12 @@ alignment:
 	g++ -Wall -g -o output/Alignment src_cpp/alignment.cpp src_cpp/image_aux.cpp src_cpp/vector_helper.cpp src_cpp/profiling.cpp `pkg-config --cflags --libs opencv4`
 	./output/Alignment
 
+alignment_profile:
+	g++ -Wall -pg -o output/Alignment src_cpp/alignment.cpp src_cpp/image_aux.cpp src_cpp/vector_helper.cpp src_cpp/profiling.cpp `pkg-config --cflags --libs opencv4`
+	./output/Alignment
+	gprof ./output/Alignment gmon.out > output/Alignment_Profile
+	rm gmon.out
+
 profiling:
 	g++ -Wall -o output/profiling src_cpp/profiling.cpp
 
