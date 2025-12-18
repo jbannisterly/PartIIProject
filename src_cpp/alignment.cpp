@@ -21,12 +21,14 @@ struct Position{
     }
 };
 
-std::vector<double> Greyscale(uint8_t* image, int pixels){
+std::vector<double> Greyscale(std::vector<uint8_t> &image, int pixels){
     std::vector<double> grey;
+    std::cout << "pixels is " << pixels << std::endl;
+    std::cout << "image size is " << image.size() << std::endl;
     grey.reserve(pixels);;
 
     for (int i = 0; i < pixels; i++){
-        grey[i] = ((77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256);
+        grey.push_back((77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256);
     }
 
     return grey;
@@ -38,17 +40,19 @@ int GetIndexPadding(int nY, int nX, int y, int x){
     return yy * nX + xx;
 }
 
-double* GetBlurred(std::vector<double> &imageData, int nY, int nX){
+std::vector<double> GetBlurred(std::vector<double> &imageData, int nY, int nX){
     Mat data = Mat(nY, nX, CV_64F, imageData.data());
-    Mat* blurred = new Mat(nY, nX, CV_64F);
+    Mat blurred = Mat(nY, nX, CV_64F);
 
     std::cout << "pre box filter" << std::endl;
 
-    boxFilter(data, *blurred, -1, Size(WINDOW_SIZE * 2 + 1, WINDOW_SIZE * 2 + 1), Point(-1, -1), true, CV_HAL_BORDER_REPLICATE);
+    boxFilter(data, blurred, -1, Size(WINDOW_SIZE * 2 + 1, WINDOW_SIZE * 2 + 1), Point(-1, -1), true, CV_HAL_BORDER_REPLICATE);
 
     std::cout << "post box filter" << std::endl;
 
-    return (double*)blurred->ptr();
+    std::vector<double> blurredVec((double*)blurred.ptr(), (double*)blurred.ptr() + imageData.size());
+
+    return blurredVec;
 }
 
 std::vector<uint8_t> Threshold(std::vector<double> &image, int nY, int nX){
@@ -60,7 +64,7 @@ std::vector<uint8_t> Threshold(std::vector<double> &image, int nY, int nX){
     const double WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
     
 #if BLUR_FORMULA == 1
-    double* blurred = GetBlurred(image, nY, nX);
+    std::vector<double> blurred = GetBlurred(image, nY, nX);
 #endif
 
     std::cout << "did blur" << std::endl;
@@ -81,11 +85,6 @@ std::vector<uint8_t> Threshold(std::vector<double> &image, int nY, int nX){
                 m -= image[GetIndexPadding(nY, nX, yy + yi, xx - WINDOW_SIZE)] / WINDOW_SCALE;
             }
 #endif
-
-            // if (m != blurred[yy * nX + xx]){
-            //     std::cout << m << " " << blurred[yy * nX + xx] << std::endl;
-            // }
-
             if (image[yy * nX + xx] > 180){
                 threshold.push_back(255);
             }else{
@@ -220,7 +219,7 @@ class FinderGroup{
     }
 
     // Get rectangle around candidates to check for finder pattern
-    VerticalData VerticalSample(uint8_t* data, int dataX, int dataY){
+    VerticalData VerticalSample(std::vector<uint8_t> data, int dataX, int dataY){
         FinderCandidate centre = Centre();
         Position* offset = VerticalOffset();
         int startX = offset->x;
@@ -277,7 +276,7 @@ class FinderGroup{
         return true;
     }
 
-    bool isValid(uint8_t* imageData, int dataX, int dataY){
+    bool isValid(std::vector<uint8_t> imageData, int dataX, int dataY){
         VerticalData vertical = VerticalSample(imageData, dataX, dataY);
 
         if (vertical.data.size() == 0) return false;
@@ -380,11 +379,11 @@ std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> &data){
     return pixels;
 }
 
-std::vector<uint8_t> DoubleToPixels(double* doubles, int nPixels){
+std::vector<uint8_t> DoubleToPixels(std::vector<double> &doubles){
     std::vector<uint8_t> pixels;
-    pixels.reserve(nPixels * 3);
+    pixels.reserve(doubles.size() * 3);
     
-    for (int i = 0; i < nPixels; i++){
+    for (int i = 0; i < doubles.size(); i++){
         pixels[i * 3] = uint8_t(doubles[i]);
         pixels[i * 3 + 1] = uint8_t(doubles[i]);
         pixels[i * 3 + 2] = uint8_t(doubles[i]);
@@ -504,7 +503,7 @@ std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders){
     return bounds;
 }
 
-Mat Project(Mat input, int* inputCoords, Position size){
+Mat Project(Mat input, std::array<int, 8> inputCoords, Position size){
     Mat output;
 
     const int cornerIndices[4] = {1, 2, 0, 3};
@@ -551,7 +550,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
     Debug.reserve(nPixels);
     for(int i = 0; i < nPixels; i++) Debug[i] = 0;
 
-    uint8_t* data = MatToBytes(inputImage);
+    std::vector<uint8_t> data = MatToBytes(inputImage);
 
     std::vector<double> grey = Greyscale(data, nPixels);
     std::vector<uint8_t> threshold = Threshold(grey, inputImage.rows, inputImage.cols);
@@ -629,7 +628,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
     }
 
     const int adjustmentDirection[8] = {-1, 1, -1, -1, 1, -1, 1, 1};
-    int* projectCoordsAdjusted = new int[8];
+    std::array<int, 8> projectCoordsAdjusted;
     for (int i = 0; i < 8; i++){
         projectCoordsAdjusted[i] = projectCoords[i] + pixelOffsetExpand * adjustmentDirection[i];
     }
