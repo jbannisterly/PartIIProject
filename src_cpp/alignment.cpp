@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "vector_helper.hpp"
 #include "profiling.hpp"
+#include <functional>
 
 using namespace cv;
 
@@ -133,60 +134,64 @@ struct FinderCandidate{
 
 };
 
-std::vector<FinderCandidate> FinderPatterns(std::vector<uint8_t> &data, int sizeY, int sizeX){
+bool PatternValid_QR(std::array<int, 5> w){
+    int avg = 0;
+    for (int i = 0; i < 5; i++){
+        avg += w[i] / 7;
+    }
+
+    for (int i = 0; i < 5; i++){
+        if (i == 2){
+            if (w[i] > 3 * avg + TOLERANCE_PIXELS) return false; // tolerance is 10x more than paper
+            if (w[i] < 3 * avg - TOLERANCE_PIXELS) return false;
+            if (w[2] < w[0] + w[1]) return false;
+            if (w[2] < w[3] + w[4]) return false;
+        }else{
+            if (w[i] > avg + TOLERANCE_PIXELS) return false;
+            if (w[i] < avg - TOLERANCE_PIXELS * 0.75) return false;
+        }
+    }
+
+    return true;
+}
+
+template <int patternSize>
+std::vector<FinderCandidate> FinderPatterns(std::vector<uint8_t> &data, int sizeY, int sizeX, std::function<bool (std::array<int, patternSize>)> patternValid){    
     int index = 0;
-    int w[5];
+    std::array<int, patternSize> w;
     int wIndex = 0;
     int size = sizeX * sizeY;
     std::vector<FinderCandidate> finder;
     
-    for (int i = 0; i < 5; i++){
+    for (int i = 0; i < patternSize; i++){
         w[i] = CountSame(data, wIndex, size);
         wIndex += w[i];
     }
 
     while(wIndex < size){
         double avg = 0;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < patternSize; i++) {
             avg += w[i] / 7;
         }
-        bool valid = true;
-        for (int i = 0; i < 5; i++){
-            if (i == 2){
-                if (w[i] > 3 * avg + TOLERANCE_PIXELS) valid = false; // tolerance is 10x more than paper
-                if (w[i] < 3 * avg - TOLERANCE_PIXELS) valid = false;
-                if (w[2] < w[0] + w[1]) valid = false;
-                if (w[2] < w[3] + w[4]) valid = false;
-            }else{
-                if (w[i] > avg + TOLERANCE_PIXELS) valid = false;
-                if (w[i] < avg - TOLERANCE_PIXELS * 0.75) valid = false;
-            }
-        }
-
+        bool valid = patternValid(w);
         if(valid && data[wIndex] > 0){
-            double centre = wIndex - w[4] - w[3] - w[2] / 2;
+            double centre = wIndex;
+            for (int j = 0; j < patternSize; j++){
+                centre -= w[j] / 2;
+            }
             double width = avg * 7;
             finder.push_back(FinderCandidate(centre / sizeX, centre - int(centre / sizeX) * sizeX, width));
         }
 
         // Read another
-        for (int i = 0; i < 4; i++){
+        for (int i = 0; i < patternSize - 1; i++){
             w[i] = w[i + 1];
         }
-        for (int i = 4; i < 5; i++){
+        for (int i = patternSize - 1; i < patternSize; i++){
             w[i] = CountSame(data, wIndex, size);
             wIndex += w[i];
         }
     }
-
-    // std::cout << "Finder size: " << finder.size() << std::endl;
-
-    // for (int i = 0; i < finder.size(); i++){
-    //     std::cout << ((finder))[i].y;
-    // }
-    // std::cout << std::endl;
-
-    // std::cout << "Returning finder" << std::endl;
 
     return finder;
 } 
@@ -244,7 +249,7 @@ class FinderGroup{
 
     std::vector<FinderCandidate> FinderPatternVertical(VerticalData vertical){
         Position* startPosition = VerticalOffset();
-        std::vector<FinderCandidate> verticalCandidates = FinderPatterns(vertical.data, vertical.width, vertical.height);
+        std::vector<FinderCandidate> verticalCandidates = FinderPatterns<5>(vertical.data, vertical.width, vertical.height, PatternValid_QR);
 
         for (int i = 0; i < verticalCandidates.size(); i++){
             double temp;
@@ -557,7 +562,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
 
     std::cout << "Threshold" << std::endl;
 
-    std::vector<FinderCandidate> finder = FinderPatterns(threshold, inputImage.rows, inputImage.cols);
+    std::vector<FinderCandidate> finder = FinderPatterns<5>(threshold, inputImage.rows, inputImage.cols, PatternValid_QR);
 
     std::cout << "Copied finder" << std::endl;
 
