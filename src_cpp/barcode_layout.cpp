@@ -34,5 +34,11 @@ BarcodeLayout* GetBarcode(){
         DrawSquare(*barcode, 0, posX[i] + 2, posY[i] + 2, BARCODE_SIZE, 3);
     }
 
+    // Extra 4th corner
+
+    DrawSquare(*barcode, 255, BARCODE_SIZE - 9, BARCODE_SIZE - 9, BARCODE_SIZE, 7);
+    DrawSquare(*barcode, 0, BARCODE_SIZE - 8, BARCODE_SIZE - 8, BARCODE_SIZE, 5);
+    DrawSquare(*barcode, 255, BARCODE_SIZE - 7, BARCODE_SIZE - 7, BARCODE_SIZE, 3);
+
     return barcode;
 }
