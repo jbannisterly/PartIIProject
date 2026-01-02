@@ -366,8 +366,6 @@ FinderCandidate FinderGroup::Centre(){
 FinderCandidate FinderGroup::CentreRefined(){
     FinderCandidate centre = Centre();
 
-    return centre;
-
     if (verticalCandidates.size() > 0){
         int nValidCandidates = 0;
 
@@ -614,11 +612,11 @@ int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     double boundsDistanceV = (bounds[0] - bounds[1]).Magnitude();
 
 
-    double sizeEstimateH = 8 * centreDistanceH / (boundsDistanceH - centreDistanceH) + 8;
-    double sizeEstimateV = 8 * centreDistanceV / (boundsDistanceV - centreDistanceV) + 8;
+    double sizeEstimateH = 8 * boundsDistanceH / (boundsDistanceH - centreDistanceH) + 1;
+    double sizeEstimateV = 8 * boundsDistanceV / (boundsDistanceV - centreDistanceV) + 1;
 
-    std::cout << "estimated width:  " << sizeEstimateV << std::endl;
-    std::cout << "estimated height: " << sizeEstimateH << std::endl;
+    std::cout << "estimated width:  " << sizeEstimateH << std::endl;
+    std::cout << "estimated height: " << sizeEstimateV << std::endl;
     return int((sizeEstimateH + sizeEstimateV) / 2);
 }
 
