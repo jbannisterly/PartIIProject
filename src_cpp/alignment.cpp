@@ -22,10 +22,10 @@ struct Position{
     }
 };
 
-void DebugCross(int x, int y, int width, int crossSize) {
+void DebugCross(int x, int y, int width, int crossSize, int colour = 255) {
     for (int i = -crossSize; i < crossSize; i++) {
-        Debug[x + y * width + i] = 255;
-        Debug[x + (y + i) * width] = 255;
+        Debug[x + y * width + i] = colour;
+        Debug[x + (y + i) * width] = colour;
     }
 }
 
@@ -282,11 +282,14 @@ class FinderGroup{
         sample.height = centre.width * 11 / 7;
         sample.width = centre.width * 2.6 / 7;
 
+        if (sample.height + startY > dataY) sample.height = dataY - startY;
+
         sample.data = std::vector<uint8_t>();
         sample.data.reserve(sample.height * sample.width);
 
         for (int xx = startX; xx < startX + sample.width; xx++){
             for (int yy = startY; yy < startY + sample.height; yy++){
+                // std::cout << xx << " " << yy << std::endl;
                 sample.data.push_back(data[yy * dataX + xx]);
             }
         }
@@ -426,7 +429,7 @@ std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> &data){
         }else{
             pixels[i * 3 + 2] = Debug[i];
             pixels[i * 3 + 1] = 0;
-            pixels[i * 3 + 0] = 0;
+            pixels[i * 3 + 0] = (Debug[i] % 2) * 255;
         }
     }
 
@@ -557,8 +560,8 @@ std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders){
 }
 
 std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders, FinderCandidate finder4){
-    const double MODULEOFFSET = 4.5;
-    const double MODULEOFFSET4 = 5.5;
+    const double MODULEOFFSET = 4;
+    const double MODULEOFFSET4 = 5;
 
     std::array<Vec3, 4> findersVec;
     std::array<Vec3, 4> bounds;
@@ -716,6 +719,10 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     std::cout << "centres" << std::endl;
 
     std::array<Vec3, 4> bounds = BoundingBox(centresOrdered, centres4[0]);
+
+    for (int i = 0; i < bounds.size(); i++) {
+        DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, 254);
+    }
 
     std::vector<uint8_t> pixels = Uint8ToPixels(threshold);
 
