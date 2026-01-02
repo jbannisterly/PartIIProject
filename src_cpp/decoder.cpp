@@ -7,15 +7,17 @@
 
 using namespace cv;
 
-uint8_t* BarcodeToPixels(uint8_t* barcode, int barcodeSize){
+std::vector<uint8_t> BarcodeToPixels(std::vector<uint8_t> barcode, int barcodeSize){
     BarcodeLayout* barcodeLayout = GetBarcode();
-    uint8_t* pixels = (uint8_t*)malloc(sizeof(uint8_t) * barcodeSize * 3);
+    std::vector<uint8_t> pixels;
+    pixels.reserve(barcodeSize * 3);
     int pixelCounter = 0;
 
     for (int i = 0; i < barcodeSize; i++){
         if (barcodeLayout->mask[i] > 0){
-            memcpy(pixels + pixelCounter, barcode + i * 3, 3);
-            pixelCounter += 3;
+            for (int j = 0; j < 3; j++) {
+                pixels.push_back(barcode[i * 3 + j]);
+            }
         } 
     }
 
@@ -31,8 +33,8 @@ int main(){
         int cols = image.cols;
         int totalLength = rows * cols * channels;
 
-        uint8_t* imageBytes = MatToBytes(image);
-        uint8_t* rawData = BarcodeToPixels(imageBytes, totalLength);
+        std::vector<uint8_t> imageBytes = MatToBytes(image);
+        std::vector<uint8_t> rawData = BarcodeToPixels(imageBytes, totalLength);
 
         uint8_t currentByte;
         uint8_t* bytePointer = new uint8_t[totalLength / 8];
