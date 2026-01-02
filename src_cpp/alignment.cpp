@@ -569,11 +569,9 @@ std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders, FinderCa
     findersVec[3] = Vec3(finder4.x, finder4.y, 0);
 
     bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[1] = findersVec[1] + (((findersVec[1] - findersVec[2]).Normalise() + 
-                (findersVec[1] - findersVec[0]).Normalise())
-                * finders[1].width) * (MODULEOFFSET / 7);
+    bounds[1] = findersVec[1] + ((findersVec[1] - findersVec[3]).Normalise() * finders[1].width * sqrt(2) * (MODULEOFFSET / 7));
     bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[0]).Normalise() * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[1]).Normalise() * finders[3].width * sqrt(2) * (MODULEOFFSET / 5));
+    bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[1]).Normalise() * finders[3].width * sqrt(2) * (MODULEOFFSET4 / 5));
 
     return bounds;
 }
@@ -763,7 +761,7 @@ int main(){
     const char* filePath = "output/output_distorted.png";
     // const char* filePathOut = "output/output_align_";
     const char* filePathOutFinal = "output/output_align.png";
-    const int ITERATIONS = 1;
+    const int ITERATIONS = 5;
 
     Mat image = imread(filePath);
     Mat nextImage;
