@@ -168,28 +168,30 @@ bool PatternValid_QR(std::vector<int> w){
     return true;
 }
 
-// bool PatternValid_QR_4(std::vector<int> w){
-//     int avg = 0;
-//     for (int i = 0; i < 3; i++){
-//         avg += w[i] / 5;
-//     }
+bool PatternValid_QR_4(std::vector<int> w){
+    const int TOLERANCE = 20;
 
-//     for (int i = 0; i < 3; i++){
-//         if (i == 1){
-//             if (w[i] > 3 * avg + TOLERANCE_PIXELS) return false; // tolerance is 10x more than paper
-//             if (w[i] < 3 * avg - TOLERANCE_PIXELS) return false;
-//             if (w[1] < w[0] + w[2]) return false;
-//         }else{
-//             if (w[i] > avg + TOLERANCE_PIXELS) return false;
-//             if (w[i] < avg - TOLERANCE_PIXELS * 0.75) return false;
-//         }
-//     }
+    int avg = 0;
+    for (int i = 0; i < 3; i++){
+        avg += w[i] / 5;
+    }
 
-//     return true;
-// }
+    for (int i = 0; i < 3; i++){
+        if (i == 1){
+            if (w[i] > 3 * avg + TOLERANCE) return false; // tolerance is 10x more than paper
+            if (w[i] < 3 * avg - TOLERANCE) return false;
+            if (w[1] < w[0] + w[2]) return false;
+        }else{
+            if (w[i] > avg + TOLERANCE) return false;
+            if (w[i] < avg - TOLERANCE * 0.75) return false;
+        }
+    }
+
+    return true;
+}
 
 std::vector<FinderCandidate> FinderPatterns(int patternSize, std::vector<uint8_t> &data, int sizeY, int sizeX, std::function<bool (std::vector<int>)> patternValid, bool firstWhite = true){    
-    // std::cout << "First White " << firstWhite << std::endl;
+    // std::cout << "First White " << firstWhite << " Pattern Size " << patternSize << std::endl;
     int index = 0;
     std::vector<int> w;
     w.resize(patternSize);
@@ -210,16 +212,21 @@ std::vector<FinderCandidate> FinderPatterns(int patternSize, std::vector<uint8_t
         bool valid = patternValid(w);
         if(valid && width > 0 && (
             (firstWhite && data[wIndex] < 255) ||
-            (!firstWhite && data[wIndex] > 0)
+            (!firstWhite && data[wIndex] > 100)
             )
         ){
             double centre = wIndex;
-            // std::cout << "Found pattern ";
             for (int j = 0; j < patternSize; j++){
                 centre -= w[j] / 2;
-                // std::cout << w[j] << " ";
             }
-            // std::cout << std::endl;
+            if (patternSize == 3 && width > 20) {
+                std::cout << "Found pattern ";
+                for (int j = 0; j < patternSize; j++){
+                    std::cout << w[j] << " ";
+                }
+                std::cout << "at " << centre - int(centre / sizeX) * sizeX << "," << int(centre / sizeX) << std::endl;
+            }
+
             finder.push_back(FinderCandidate(centre / sizeX, centre - int(centre / sizeX) * sizeX, width));
         }
 
@@ -447,7 +454,7 @@ std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> &finderGroups, 
         if(finderGroups[finderGroupsValidIndex[i]].size() * 3 > maxSize){
             FinderCandidate centre = finderGroups[finderGroupsValidIndex[i]].CentreRefined();
             centres.push_back(centre);
-            std::cout << "Centre size " << centre.width << " Centre count " << finderGroups[finderGroupsValidIndex[i]].size() << std::endl;
+            // std::cout << "Centre size " << centre.width << " Centre count " << finderGroups[finderGroupsValidIndex[i]].size() << std::endl;
         }else{
             break;
         }
@@ -617,13 +624,13 @@ int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
 std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite) {
     std::vector<FinderCandidate> finder = FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
 
-    // if (patternSize == 5) {
-    //     for (int i = 0; i < finder.size(); i++) {
-    //         for (int j = -finder[i].width / 2; j < finder[i].width; j++) {
-    //             Debug[int(finder[i].x) + int(finder[i].y) * inputImage.cols + j] = 55;
-    //         }
-    //     }
-    // }
+    if (patternSize == 3) {
+        for (int i = 0; i < finder.size(); i++) {
+            for (int j = -finder[i].width / 2; j < finder[i].width; j++) {
+                Debug[int(finder[i].x) + int(finder[i].y) * inputImage.cols + j] = 55;
+            }
+        }
+    }
 
     // exit(-1);
 
@@ -663,8 +670,12 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
 
     std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValidIndex);
 
-    for (int i = 0; i < centres.size(); i++) {
-        DebugCross(int(centres[i].x), int(centres[i].y), inputImage.cols, centres[i].width / 2);
+    if (patternSize == 3) {
+        std::cout << "pattern is 3" << std::endl;
+        std::cout << "centres size " << centres.size() << std::endl;
+        for (int i = 0; i < centres.size(); i++) {
+            DebugCross(int(centres[i].x), int(centres[i].y), inputImage.cols, centres[i].width / 2);
+        }
     }
 
     std::cout << "Centre count " << centres.size() << std::endl;
@@ -692,9 +703,10 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     std::cout << "Threshold" << std::endl;
 
     std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, false);
-    // std::vector<FinderCandidate> centres4 = GetAlignmentCentres(3, threshold, data, inputImage, PatternValid_QR_4, true);
+    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(3, threshold, data, inputImage, PatternValid_QR_4, false);
 
     std::array<FinderCandidate, 3> centresSorted = OrderCentres(centres);
+    std::array<FinderCandidate, 3> centresSorted4 = OrderCentres(centres);
 
     for (int i = 0; i < centresSorted.size(); i++) {
         // DebugCross(int(centresSorted[i].x), int(centresSorted[i].y), inputImage.cols);
@@ -703,7 +715,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     
     std::cout << "centres" << std::endl;
 
-    std::array<Vec3, 4> bounds = BoundingBox(centresSorted);
+    std::array<Vec3, 4> bounds = BoundingBox(centresSorted, centresSorted4[0]);
 
     std::vector<uint8_t> pixels = Uint8ToPixels(threshold);
 
