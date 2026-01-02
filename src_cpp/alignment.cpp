@@ -22,6 +22,13 @@ struct Position{
     }
 };
 
+void DebugCross(int x, int y, int width, int crossSize) {
+    for (int i = -crossSize; i < crossSize; i++) {
+        Debug[x + y * width + i] = 255;
+        Debug[x + (y + i) * width] = 255;
+    }
+}
+
 std::vector<double> Greyscale(std::vector<uint8_t> &image, int pixels){
     std::vector<double> grey;
     std::cout << "pixels is " << pixels << std::endl;
@@ -116,6 +123,8 @@ int CountSame(std::vector<uint8_t> &data, int index, int size){
         i++;
     }
 
+    // std::cout << "Same " << i << " value " << std::to_string(value) << std::endl;
+
     return i;
 }
 
@@ -132,9 +141,13 @@ struct FinderCandidate{
     width { initW }
     {}
 
+    void Debug() {
+        // std::cout << x << " " << y << " " << width << std::endl;
+    }
+
 };
 
-bool PatternValid_QR(std::array<int, 5> w){
+bool PatternValid_QR(std::vector<int> w){
     int avg = 0;
     for (int i = 0; i < 5; i++){
         avg += w[i] / 7;
@@ -155,10 +168,31 @@ bool PatternValid_QR(std::array<int, 5> w){
     return true;
 }
 
-template <int patternSize>
-std::vector<FinderCandidate> FinderPatterns(std::vector<uint8_t> &data, int sizeY, int sizeX, std::function<bool (std::array<int, patternSize>)> patternValid){    
+// bool PatternValid_QR_4(std::vector<int> w){
+//     int avg = 0;
+//     for (int i = 0; i < 3; i++){
+//         avg += w[i] / 5;
+//     }
+
+//     for (int i = 0; i < 3; i++){
+//         if (i == 1){
+//             if (w[i] > 3 * avg + TOLERANCE_PIXELS) return false; // tolerance is 10x more than paper
+//             if (w[i] < 3 * avg - TOLERANCE_PIXELS) return false;
+//             if (w[1] < w[0] + w[2]) return false;
+//         }else{
+//             if (w[i] > avg + TOLERANCE_PIXELS) return false;
+//             if (w[i] < avg - TOLERANCE_PIXELS * 0.75) return false;
+//         }
+//     }
+
+//     return true;
+// }
+
+std::vector<FinderCandidate> FinderPatterns(int patternSize, std::vector<uint8_t> &data, int sizeY, int sizeX, std::function<bool (std::vector<int>)> patternValid, bool firstWhite = true){    
+    // std::cout << "First White " << firstWhite << std::endl;
     int index = 0;
-    std::array<int, patternSize> w;
+    std::vector<int> w;
+    w.resize(patternSize);
     int wIndex = 0;
     int size = sizeX * sizeY;
     std::vector<FinderCandidate> finder;
@@ -169,17 +203,23 @@ std::vector<FinderCandidate> FinderPatterns(std::vector<uint8_t> &data, int size
     }
 
     while(wIndex < size){
-        double avg = 0;
+        double width = 0;
         for (int i = 0; i < patternSize; i++) {
-            avg += w[i] / 7;
+            width += w[i];
         }
         bool valid = patternValid(w);
-        if(valid && data[wIndex] > 0){
+        if(valid && width > 0 && (
+            (firstWhite && data[wIndex] < 255) ||
+            (!firstWhite && data[wIndex] > 0)
+            )
+        ){
             double centre = wIndex;
+            // std::cout << "Found pattern ";
             for (int j = 0; j < patternSize; j++){
                 centre -= w[j] / 2;
+                // std::cout << w[j] << " ";
             }
-            double width = avg * 7;
+            // std::cout << std::endl;
             finder.push_back(FinderCandidate(centre / sizeX, centre - int(centre / sizeX) * sizeX, width));
         }
 
@@ -247,9 +287,9 @@ class FinderGroup{
         return sample;
     }
 
-    std::vector<FinderCandidate> FinderPatternVertical(VerticalData vertical){
+    std::vector<FinderCandidate> FinderPatternVertical(int patternSize, VerticalData vertical, std::function<bool (std::vector<int>)> patternValid, bool firstWhite){
         Position* startPosition = VerticalOffset();
-        std::vector<FinderCandidate> verticalCandidates = FinderPatterns<5>(vertical.data, vertical.width, vertical.height, PatternValid_QR);
+        std::vector<FinderCandidate> verticalCandidates = FinderPatterns(patternSize, vertical.data, vertical.width, vertical.height, patternValid, firstWhite);
 
         for (int i = 0; i < verticalCandidates.size(); i++){
             double temp;
@@ -281,11 +321,11 @@ class FinderGroup{
         return true;
     }
 
-    bool isValid(std::vector<uint8_t> imageData, int dataX, int dataY){
-        VerticalData vertical = VerticalSample(imageData, dataX, dataY);
+    bool isValid(std::vector<uint8_t> threshold, int dataX, int dataY, int patternSize, std::function<bool (std::vector<int>)> patternValid, bool firstWhite){
+        VerticalData vertical = VerticalSample(threshold, dataX, dataY);
 
         if (vertical.data.size() == 0) return false;
-        verticalCandidates = FinderPatternVertical(vertical);
+        verticalCandidates = FinderPatternVertical(patternSize, vertical, patternValid, firstWhite);
 
         bool verticalFound = verticalCandidates.size() > 0;
 
@@ -319,26 +359,26 @@ FinderCandidate FinderGroup::CentreRefined(){
     return centre;
 
     if (verticalCandidates.size() > 0){
-        int validCandidates = 0;
+        int nValidCandidates = 0;
 
         std::cout << "would have been " << centre.y << std::endl;
 
         centre.y = 0;
         for (int i = 0; i < verticalCandidates.size(); i++){
             if (verticalCandidates[i].width > 0){
-                validCandidates++;
+                nValidCandidates++;
                 centre.y += verticalCandidates[i].y;
-                std::cout << verticalCandidates[i].width << std::endl;
+                // std::cout << verticalCandidates[i].width << std::endl;
             }
         }
-        if (validCandidates > 0){
-            centre.y /= validCandidates;
+        if (nValidCandidates > 0){
+            centre.y /= nValidCandidates;
         }else{
             return Centre();
         }
 
         std::cout << "vertical gives " << centre.y << std::endl;
-        std::cout << "using " << validCandidates << " samples" << std::endl;
+        std::cout << "using " << nValidCandidates << " samples" << std::endl;
     }
 
     return centre;
@@ -378,6 +418,8 @@ std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> &data){
             pixels[i * 3 + 2] = data[i];
         }else{
             pixels[i * 3 + 2] = Debug[i];
+            pixels[i * 3 + 1] = 0;
+            pixels[i * 3 + 0] = 0;
         }
     }
 
@@ -397,14 +439,15 @@ std::vector<uint8_t> DoubleToPixels(std::vector<double> &doubles){
     return pixels;
 }
 
-std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> &finderGroups, std::vector<int> &finderGroupsValid){
+std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> &finderGroups, std::vector<int> &finderGroupsValidIndex){
     std::vector<FinderCandidate> centres;
 
-    int maxSize = finderGroups[finderGroupsValid[0]].size();
-    for (int i = 0; i < finderGroupsValid.size(); i++){
-        if(finderGroups[finderGroupsValid[i]].size() * 3 > maxSize){
-            FinderCandidate centre = finderGroups[finderGroupsValid[i]].CentreRefined();
+    int maxSize = finderGroups[finderGroupsValidIndex[0]].size();
+    for (int i = 0; i < finderGroupsValidIndex.size(); i++){
+        if(finderGroups[finderGroupsValidIndex[i]].size() * 3 > maxSize){
+            FinderCandidate centre = finderGroups[finderGroupsValidIndex[i]].CentreRefined();
             centres.push_back(centre);
+            std::cout << "Centre size " << centre.width << " Centre count " << finderGroups[finderGroupsValidIndex[i]].size() << std::endl;
         }else{
             break;
         }
@@ -495,8 +538,6 @@ std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders){
         findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
     }
 
-    std::cout << finders[0].width << std::endl;
-
     bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
     bounds[1] = findersVec[1] + (((findersVec[1] - findersVec[2]).Normalise() + 
                 (findersVec[1] - findersVec[0]).Normalise())
@@ -508,11 +549,34 @@ std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders){
     return bounds;
 }
 
+std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders, FinderCandidate finder4){
+    const double MODULEOFFSET = 4.5;
+    const double MODULEOFFSET4 = 5.5;
+
+    std::array<Vec3, 4> findersVec;
+    std::array<Vec3, 4> bounds;
+    
+    for (int i = 0; i < 3; i++){
+        findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
+    }
+    findersVec[3] = Vec3(finder4.x, finder4.y, 0);
+
+    bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
+    bounds[1] = findersVec[1] + (((findersVec[1] - findersVec[2]).Normalise() + 
+                (findersVec[1] - findersVec[0]).Normalise())
+                * finders[1].width) * (MODULEOFFSET / 7);
+    bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[0]).Normalise() * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
+    bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[1]).Normalise() * finders[3].width * sqrt(2) * (MODULEOFFSET / 5));
+
+    return bounds;
+}
+
 Mat Project(Mat input, std::array<int, 8> inputCoords, Position size){
     Mat output;
 
     const int cornerIndices[4] = {1, 2, 0, 3};
 
+    std::cout << "Start Coords" << std::endl;
     Point2f startCoords[4];
     for (int i = 0; i < 4; i++){
         startCoords[i] = Point2f(inputCoords[cornerIndices[i] * 2], inputCoords[cornerIndices[i] * 2 + 1]);
@@ -550,7 +614,65 @@ int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     return int((sizeEstimateH + sizeEstimateV) / 2);
 }
 
-Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
+std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite) {
+    std::vector<FinderCandidate> finder = FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
+
+    // if (patternSize == 5) {
+    //     for (int i = 0; i < finder.size(); i++) {
+    //         for (int j = -finder[i].width / 2; j < finder[i].width; j++) {
+    //             Debug[int(finder[i].x) + int(finder[i].y) * inputImage.cols + j] = 55;
+    //         }
+    //     }
+    // }
+
+    // exit(-1);
+
+    std::cout << "Finder Size " << finder.size() << std::endl;
+
+    std::vector<FinderGroup> finderGroups = GroupFinders(finder);
+
+    std::cout << "Finder Groups Size " << finderGroups.size() << std::endl;
+
+    std::vector<int> finderGroupsValidIndex;
+
+    for (int i = 0; i < finderGroups.size(); i++){
+        bool valid = finderGroups[i].isValid(threshold, inputImage.cols, inputImage.rows, patternSize, patternValid, firstWhite);
+        if (valid){
+            finderGroupsValidIndex.push_back(i);
+        }
+    }
+
+    std::cout << "Valid Finder Group Size " << finderGroupsValidIndex.size() << std::endl;
+
+    int size[finderGroups.size()];
+
+    for (int i = 0; i < finderGroups.size(); i++){
+        size[i] = finderGroups[i].size();
+    }
+
+    std::sort(finderGroupsValidIndex.begin(), finderGroupsValidIndex.end(), [&size](int a, int b){
+        return size[a] > size[b];
+    });
+
+    std::cout << "sorted" << std::endl;
+    std::cout << "Finder Groups Valid Index Order" << std::endl;
+
+    // for (int i = 0; i < finderGroupsValidIndex.size(); i++){
+    //     std::cout << finderGroups[finderGroupsValidIndex[i]].size() << std::endl;
+    // }
+
+    std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValidIndex);
+
+    for (int i = 0; i < centres.size(); i++) {
+        DebugCross(int(centres[i].x), int(centres[i].y), inputImage.cols, centres[i].width / 2);
+    }
+
+    std::cout << "Centre count " << centres.size() << std::endl;
+
+    return centres;
+}
+
+Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::string debugPath = ""){
     int nPixels = inputImage.cols * inputImage.rows; 
     Debug.reserve(nPixels);
     for(int i = 0; i < nPixels; i++) Debug[i] = 0;
@@ -560,62 +682,28 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
     std::vector<double> grey = Greyscale(data, nPixels);
     std::vector<uint8_t> threshold = Threshold(grey, inputImage.rows, inputImage.cols);
 
+
+    Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
+    
+    if (debugPath != "") {
+        imwrite("output/output_threshold.png", thresholdImage);
+    }
+
     std::cout << "Threshold" << std::endl;
 
-    std::vector<FinderCandidate> finder = FinderPatterns<5>(threshold, inputImage.rows, inputImage.cols, PatternValid_QR);
+    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, false);
+    // std::vector<FinderCandidate> centres4 = GetAlignmentCentres(3, threshold, data, inputImage, PatternValid_QR_4, true);
 
-    std::cout << "Copied finder" << std::endl;
-
-    std::cout << finder.size() << std::endl;
-
-    std::vector<FinderGroup> finderGroups = GroupFinders(finder);
-
-    std::cout << "Finder Groups" << std::endl;
-    std::cout << finderGroups.size() << std::endl;
-
-    std::vector<int> finderGroupsValid;
-
-    for (int i = 0; i < finderGroups.size(); i++){
-        bool valid = finderGroups[i].isValid(data, inputImage.cols, inputImage.rows);
-        if (valid){
-            finderGroupsValid.push_back(i);
-        }
-    }
-
-    std::cout << finderGroupsValid.size() << std::endl;
-
-    int size[finderGroups.size()];
-
-    for (int i = 0; i < finderGroups.size(); i++){
-        size[i] = finderGroups[i].size();
-    }
-
-    std::sort(finderGroupsValid.begin(), finderGroupsValid.end(), [&size](int a, int b){
-        return size[a] > size[b];
-    });
-
-    std::cout << "sorted" << std::endl;
-
-    std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValid);
     std::array<FinderCandidate, 3> centresSorted = OrderCentres(centres);
 
+    for (int i = 0; i < centresSorted.size(); i++) {
+        // DebugCross(int(centresSorted[i].x), int(centresSorted[i].y), inputImage.cols);
+        std::cout << "IMPORTANT DEBUG " << centresSorted[i].x << " " << centresSorted[i].y << std::endl;
+    }
+    
     std::cout << "centres" << std::endl;
 
     std::array<Vec3, 4> bounds = BoundingBox(centresSorted);
-
-    // TODO: check bounds of bounds and centres so they are in the image
-    // centres is length 3, but 4 are accessed
-
-    for (int i = 0; i < 3; i++){
-        std::cout << bounds[i].x << "," << bounds[i].y << std::endl;
-        std::cout << centres[i].x << "," << centres[i].y << std::endl;
-        for (int j = -10; j < 10; j++){
-            Debug[int(centres[i].x) + int(centres[i].y) * inputImage.cols + j] = 255;
-            Debug[int(centres[i].x) + (int(centres[i].y) + j) * inputImage.cols] = 255;
-            Debug[int(bounds[i].x) + int(bounds[i].y) * inputImage.cols + j] = 127;
-            Debug[int(bounds[i].x) + (int(bounds[i].y) + j) * inputImage.cols] = 127;
-        }
-    }
 
     std::vector<uint8_t> pixels = Uint8ToPixels(threshold);
 
@@ -647,30 +735,33 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand){
     std::cout << "Projected image" << std::endl;
 
     Mat debugImage(inputImage.rows, inputImage.cols, CV_8UC3, pixels.data());
-    imwrite("output/output_debug2.png", debugImage);
+    
+    if (debugPath != "") {
+        imwrite(debugPath, debugImage);
+    }
 
     return outputImage;
 }
 
 int main(){
+    std::string filePathDebug = "output/output_debug_";
     std::string filePathOut = "output/output_align_";
     const char* filePath = "output/output_distorted.png";
     // const char* filePathOut = "output/output_align_";
-    const char* filePathOutFinal = "ouput/output_align.png";
-    const char* filePathDebug = "output/output_debug.png";
-    const int ITERATIONS = 3;
+    const char* filePathOutFinal = "output/output_align.png";
+    const int ITERATIONS = 1;
 
     Mat image = imread(filePath);
     Mat nextImage;
 
     for (int i = 0; i < ITERATIONS; i++){
-        nextImage = AlignImage(image.clone(), image.rows, 100);
+        nextImage = AlignImage(image.clone(), image.rows, 100, filePathDebug + std::to_string(i) +  ".png");
         imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
         image = nextImage;
     }
 
     
-    Mat outputImage = AlignImage(nextImage, BARCODE_SIZE, 0);
+    Mat outputImage = AlignImage(nextImage, BARCODE_SIZE, 0, filePathDebug + "final.png");
     std::cout << "writing the final image" << std::endl;
     imwrite(filePathOutFinal, outputImage);
     std::cout << "Finished program" << std::endl;
