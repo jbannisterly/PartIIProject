@@ -651,14 +651,16 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
 
     std::cout << "Valid Finder Group Size " << finderGroupsValidIndex.size() << std::endl;
 
-    int size[finderGroups.size()];
+    int quality[finderGroups.size()];
 
     for (int i = 0; i < finderGroups.size(); i++){
-        size[i] = finderGroups[i].size();
+        int qualNX = finderGroups[i].size();
+        int qualWidth = finderGroups[i].Centre().width;
+        quality[i] = qualNX * qualWidth;
     }
 
-    std::sort(finderGroupsValidIndex.begin(), finderGroupsValidIndex.end(), [&size](int a, int b){
-        return size[a] > size[b];
+    std::sort(finderGroupsValidIndex.begin(), finderGroupsValidIndex.end(), [&quality](int a, int b){
+        return quality[a] > quality[b];
     });
 
     std::cout << "sorted" << std::endl;
@@ -674,7 +676,7 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
         std::cout << "pattern is 3" << std::endl;
         std::cout << "centres size " << centres.size() << std::endl;
         for (int i = 0; i < centres.size(); i++) {
-            DebugCross(int(centres[i].x), int(centres[i].y), inputImage.cols, centres[i].width / 2);
+            // DebugCross(int(centres[i].x), int(centres[i].y), inputImage.cols, centres[i].width / 2);
         }
     }
 
@@ -705,17 +707,17 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, false);
     std::vector<FinderCandidate> centres4 = GetAlignmentCentres(3, threshold, data, inputImage, PatternValid_QR_4, false);
 
-    std::array<FinderCandidate, 3> centresSorted = OrderCentres(centres);
-    std::array<FinderCandidate, 3> centresSorted4 = OrderCentres(centres);
+    std::array<FinderCandidate, 3> centresOrdered = OrderCentres(centres);
 
-    for (int i = 0; i < centresSorted.size(); i++) {
-        // DebugCross(int(centresSorted[i].x), int(centresSorted[i].y), inputImage.cols);
-        std::cout << "IMPORTANT DEBUG " << centresSorted[i].x << " " << centresSorted[i].y << std::endl;
+    for (int i = 0; i < centresOrdered.size(); i++) {
+        DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
+        std::cout << "IMPORTANT DEBUG " << centresOrdered[i].x << " " << centresOrdered[i].y << std::endl;
     }
+    DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
     
     std::cout << "centres" << std::endl;
 
-    std::array<Vec3, 4> bounds = BoundingBox(centresSorted, centresSorted4[0]);
+    std::array<Vec3, 4> bounds = BoundingBox(centresOrdered, centres4[0]);
 
     std::vector<uint8_t> pixels = Uint8ToPixels(threshold);
 
@@ -729,7 +731,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 
     Vec3 centresVec[3];
     for (int i = 0; i < 4; i++){
-        centresVec[i] = Vec3(centresSorted[i].x, centresSorted[i].y, 0);
+        centresVec[i] = Vec3(centresOrdered[i].x, centresOrdered[i].y, 0);
     }
 
     const int adjustmentDirection[8] = {-1, 1, -1, -1, 1, -1, 1, 1};
