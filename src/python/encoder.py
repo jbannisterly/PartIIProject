@@ -17,4 +17,4 @@ bitLength.frombytes(length)
 bits = np.concatenate([np.unpackbits(bitLength), np.unpackbits(bitData)])
 image = np.resize(np.pad(bits, (0,25 * 25 - length)), (25, 25))
 
-cv2.imwrite('../output/output.png', image * 255)
+cv2.imwrite('output/img/output.png', image * 255)

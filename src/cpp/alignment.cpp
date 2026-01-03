@@ -698,7 +698,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
     if (debugPath != "") {
-        imwrite("output/output_threshold.png", thresholdImage);
+        imwrite("output/img/output_threshold.png", thresholdImage);
     }
 
     std::cout << "Threshold" << std::endl;
@@ -761,11 +761,10 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 }
 
 int main(){
-    std::string filePathDebug = "output/output_debug_";
-    std::string filePathOut = "output/output_align_";
-    const char* filePath = "output/output_distorted.png";
-    // const char* filePathOut = "output/output_align_";
-    const char* filePathOutFinal = "output/output_align.png";
+    std::string filePathDebug = "output/img/output_debug_";
+    std::string filePathOut = "output/img/output_align_";
+    std::string filePath = "output/img/output_distorted.png";
+    std::string filePathOutFinal = "output/img/output_align.png";
     const int ITERATIONS = 5;
 
     Mat image = imread(filePath);

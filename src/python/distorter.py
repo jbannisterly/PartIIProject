@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import noise
 
-barcode = cv2.imread("output/output.png")
+barcode = cv2.imread("output/img/output.png")
 y,x,c = barcode.shape
 barcode = cv2.resize(barcode, (y * 8, x * 8), interpolation=cv2.INTER_NEAREST)
 y,x,c = barcode.shape
@@ -45,5 +45,5 @@ for i in range(70):
 
 
 
-cv2.imwrite("output/output_distorted.png", np.uint8(np.clip(barcode_background, 0, 255/256) * 256))
-cv2.imwrite("output/test.png", np.uint8(mask))
+cv2.imwrite("output/img/output_distorted.png", np.uint8(np.clip(barcode_background, 0, 255/256) * 256))
+cv2.imwrite("output/img/test.png", np.uint8(mask))

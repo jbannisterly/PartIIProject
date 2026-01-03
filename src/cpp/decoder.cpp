@@ -26,7 +26,7 @@ std::vector<uint8_t> BarcodeToPixels(std::vector<uint8_t> barcode, int barcodeSi
 
 int main(){
     try {
-        Mat image = imread("output/output_align.png");
+        Mat image = imread("output/img/output_align.png");
 
         int channels = image.channels();
         int rows = image.rows;

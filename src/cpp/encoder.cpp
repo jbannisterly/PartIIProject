@@ -88,5 +88,5 @@ int main(){
     Mat image(BARCODE_SIZE, BARCODE_SIZE, CV_8UC3);
     image.data = imageData;
 
-    imwrite("output/output.png", image);
+    imwrite("output/img/output.png", image);
 }
