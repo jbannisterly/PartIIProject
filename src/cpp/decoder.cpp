@@ -8,13 +8,13 @@
 using namespace cv;
 
 std::vector<uint8_t> BarcodeToPixels(std::vector<uint8_t> barcode, int barcodeSize){
-    BarcodeLayout* barcodeLayout = GetBarcode();
+    BarcodeLayout barcodeLayout = GetBarcode();
     std::vector<uint8_t> pixels;
     pixels.reserve(barcodeSize * 3);
     int pixelCounter = 0;
 
     for (int i = 0; i < barcodeSize; i++){
-        if (barcodeLayout->mask[i] > 0){
+        if (barcodeLayout.mask[i] > 0){
             for (int j = 0; j < 3; j++) {
                 pixels.push_back(barcode[i * 3 + j]);
             }

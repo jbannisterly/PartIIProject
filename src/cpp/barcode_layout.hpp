@@ -1,10 +1,11 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 struct BarcodeLayout{
-    uint8_t* data;
-    uint8_t* mask;
+    std::vector<uint8_t> data;
+    std::vector<uint8_t> mask;
 };
 
-BarcodeLayout* GetBarcode();
+BarcodeLayout GetBarcode();
