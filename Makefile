@@ -35,6 +35,9 @@ error2:
 	g++ -Ilibs/ -o output/bin/Error2 src/cpp/error_correction_schifra.cpp
 	./output/bin/Error2
 
+colours:
+	g++ -o output/bin/Colours src/cpp/colours.cpp
+
 full:
 	g++ -Ilibs/ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp `pkg-config --cflags --libs opencv4 zlib`
 	g++ -o output/bin/Alignment src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp `pkg-config --cflags --libs opencv4`
