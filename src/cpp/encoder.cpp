@@ -10,6 +10,41 @@
 
 using namespace cv;
 
+std::vector<std::vector<uint8_t>> SplitBytes(std::vector<uint8_t> &data, std::vector<int> &errorCorrectionLevels, int errorCorrectionChunkSize) {
+    std::vector<std::vector<uint8_t>> splitBytes;
+    splitBytes.reserve(errorCorrectionLevels.size());
+    
+    int bytesPerChunk = 0;
+    
+    for (int i = 0; i < errorCorrectionLevels.size(); i++) {
+        bytesPerChunk += errorCorrectionChunkSize - errorCorrectionLevels[i];
+    }
+
+    int nChunks = int(ceil(data.size() / (float)bytesPerChunk));
+
+    int startIndex = 0;
+    int endIndex = 0;
+
+    for (int i = 0; i < errorCorrectionLevels.size(); i++) {
+        int bytesPerSplit = (errorCorrectionChunkSize - errorCorrectionLevels[i]) * nChunks;
+        endIndex = startIndex + bytesPerSplit;
+
+        std::cout << bytesPerSplit << std::endl;
+        std::cout << endIndex << std::endl;
+
+        if (endIndex > data.size()) {
+            endIndex = data.size();
+            std::cout << "Too big" << std::endl;
+        }
+        std::vector<uint8_t> splitData(data.cbegin() + startIndex, data.cbegin() + endIndex);
+
+        splitBytes.push_back(splitData);
+        startIndex = endIndex;
+    }
+
+    return splitBytes;
+}
+
 std::vector<uint8_t> EncodeMessage(char* message){
     uint16_t length = strlen(message);
 
