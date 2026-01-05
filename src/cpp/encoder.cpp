@@ -10,6 +10,18 @@
 
 using namespace cv;
 
+std::vector<std::vector<uint8_t>> ErrorCorrectionSplit(std::vector<std::vector<uint8_t>> &splitBytes, std::vector<int> &errorCorrectionLevels, int errorCorrectionChunkSize) {
+    std::vector<std::vector<uint8_t>> splitError;
+    splitError.reserve(splitBytes.size());
+    
+    for (int i = 0; i < splitBytes.size(); i++) {
+        ErrorCorrection<errorCorrectionChunkSize, errorCorrectionLevels[i]> errorCorrector;
+        splitError.push_back(errorCorrector.Encode(splitBytes[i]));
+    }
+
+    return splitError;
+}
+
 std::vector<std::vector<uint8_t>> SplitBytes(std::vector<uint8_t> &data, std::vector<int> &errorCorrectionLevels, int errorCorrectionChunkSize) {
     std::vector<std::vector<uint8_t>> splitBytes;
     splitBytes.reserve(errorCorrectionLevels.size());
@@ -24,6 +36,7 @@ std::vector<std::vector<uint8_t>> SplitBytes(std::vector<uint8_t> &data, std::ve
 
     int startIndex = 0;
     int endIndex = 0;
+    int padding = 0;
 
     for (int i = 0; i < errorCorrectionLevels.size(); i++) {
         int bytesPerSplit = (errorCorrectionChunkSize - errorCorrectionLevels[i]) * nChunks;
@@ -33,10 +46,14 @@ std::vector<std::vector<uint8_t>> SplitBytes(std::vector<uint8_t> &data, std::ve
         std::cout << endIndex << std::endl;
 
         if (endIndex > data.size()) {
+            padding = data.size() - endIndex;
             endIndex = data.size();
             std::cout << "Too big" << std::endl;
         }
         std::vector<uint8_t> splitData(data.cbegin() + startIndex, data.cbegin() + endIndex);
+        for (int j = 0; j < padding; j++) {
+            splitData.push_back(0);
+        }
 
         splitBytes.push_back(splitData);
         startIndex = endIndex;
