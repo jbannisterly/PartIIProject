@@ -28,6 +28,8 @@ std::vector<uint8_t> ColourPixels::DataToPixels(std::vector<std::vector<uint8_t>
         pixels.push_back(pixelColour.r);
     }
 
+    std::cout << pixels.size() << std::endl;
+
     return pixels;
 }
 

@@ -15,14 +15,14 @@ struct DataLen{
 class NoCompression{
     public:
 
-    static std::vector<uint8_t> compress(uint8_t* data, int len);
+    static std::vector<uint8_t> compress(std::vector<uint8_t> &data);
     static std::vector<uint8_t> decompress(uint8_t* data, int len);
 };
 
 class Compression{
     public:
 
-    static std::vector<uint8_t> compress(uint8_t* data, int len);
+    static std::vector<uint8_t> compress(std::vector<uint8_t> &data);
     static std::vector<uint8_t> decompress(uint8_t* data, int len);
 };
 

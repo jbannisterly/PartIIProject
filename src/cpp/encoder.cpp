@@ -69,7 +69,9 @@ std::vector<std::vector<uint8_t>> EncodeMessage(std::vector<uint8_t> rawData, st
 
     // memcpy(rawData, message, length);
 
-    std::vector<uint8_t> compressedData = Compression::compress(rawData.data(), rawData.size());
+    std::vector<uint8_t> compressedData = Compression::compress(rawData);
+
+    std::cout << "Compressed length " << compressedData.size() << std::endl; 
     
     compressedData.insert(compressedData.begin(), {
         (compressedData.size() >> 0) & 255,
@@ -77,7 +79,12 @@ std::vector<std::vector<uint8_t>> EncodeMessage(std::vector<uint8_t> rawData, st
     });
 
     std::vector<std::vector<uint8_t>> splitData = SplitBytes(compressedData, errorCorrectors);
+
+    std::cout << "Split length " << splitData[0].size() << std::endl;
+
     std::vector<std::vector<uint8_t>> errorSplitData = ErrorCorrectionSplit(splitData,errorCorrectors);
+
+    std::cout << "Error length " << errorSplitData[0].size() << std::endl;
 
     return errorSplitData;
 }
@@ -126,8 +133,8 @@ int main(){
 
     std::vector<ErrorCorrectionVirtual*> errorCorrectors;
     errorCorrectors.push_back(new ErrorCorrection<16, 4>());
-    errorCorrectors.push_back(new ErrorCorrection<16, 8>());
-    errorCorrectors.push_back(new ErrorCorrection<16, 8>());
+    errorCorrectors.push_back(new ErrorCorrection<16, 4>());
+    errorCorrectors.push_back(new ErrorCorrection<16, 4>());
 
     // std::vector<uint8_t> byteData = EncodeMessage(message);
 

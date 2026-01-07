@@ -3,23 +3,23 @@
 #include <iostream>
 #include <stdint.h>
 
-std::vector<uint8_t> NoCompression::compress(uint8_t* data, int len){
-    return std::vector<uint8_t> (data, data + len);
+std::vector<uint8_t> NoCompression::compress(std::vector<uint8_t> &data){
+    return std::vector<uint8_t> (data);
 }
 
 std::vector<uint8_t> NoCompression::decompress(uint8_t* data, int len){
     return std::vector<uint8_t>(data, data + len);
 }
 
-std::vector<uint8_t> Compression::compress(uint8_t* data, int len){
-    uint8_t* compressed = (uint8_t*)malloc(sizeof(uint8_t) * len * 2);
+std::vector<uint8_t> Compression::compress(std::vector<uint8_t> &data){
+    uint8_t* compressed = (uint8_t*)malloc(sizeof(uint8_t) * data.size() * 2);
+    ulong compressedLen = data.size() * 2;
 
-    for (int i = 0; i < len * 2; i++){
+    for (int i = 0; i < compressedLen; i++){
         compressed[i] = 100;
     }
 
-    ulong compressedLen = len * 2;
-    compress2(compressed, &compressedLen, data, uLongf(len), 2);
+    compress2(compressed, &compressedLen, data.data(), uLongf(data.size()), 2);
 
     std::vector<uint8_t> compressedVector(compressed, compressed + compressedLen);
     free(compressed);
