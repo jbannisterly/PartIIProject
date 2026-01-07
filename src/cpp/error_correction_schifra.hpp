@@ -10,11 +10,25 @@
 #include <stdint.h>
 #include <cmath> 
 
+class ErrorCorrectionVirtual {
+    public:
+    
+    virtual std::vector<uint8_t> Encode(std::vector<uint8_t> rawData) = 0;
+    virtual std::vector<uint8_t> Decode(std::vector<uint8_t> encodedData) = 0;
+    virtual uint8_t getBlockLen() = 0;
+    virtual uint8_t getFECLen() = 0;
+    virtual uint8_t getDataLen() = 0;
+    // virtual ~ErrorCorrectionVirtual() {}
+    // virtual ErrorCorrectionVirtual() {}
+    // virtual ErrorCorrectionVirtual(&ErrorCorrectionVirtual) {}
+
+};
+
 template<uint8_t blockLen, uint8_t fecLen>
-class ErrorCorrection{
+class ErrorCorrection: public ErrorCorrectionVirtual {
     public:
 
-    std::vector<uint8_t> Encode(std::vector<uint8_t> rawData){
+    std::vector<uint8_t> Encode(std::vector<uint8_t> rawData) override {
         int nBlocks = std::ceil((float)rawData.size() / (blockLen - fecLen));
 
         std::vector<uint8_t> encodedData;
@@ -44,7 +58,7 @@ class ErrorCorrection{
         return encodedData;
     }
 
-    std::vector<uint8_t> Decode(std::vector<uint8_t> encodedData){
+    std::vector<uint8_t> Decode(std::vector<uint8_t> encodedData) override {
         int nBlocks = encodedData.size() / blockLen;
 
         std::vector<uint8_t> decodedData;
@@ -67,5 +81,17 @@ class ErrorCorrection{
         }
 
         return decodedData;
+    }
+
+    uint8_t getBlockLen() override {
+        return blockLen;
+    }
+
+    uint8_t getFECLen() override {
+        return fecLen;
+    }
+
+    uint8_t getDataLen() override {
+        return blockLen - fecLen;
     }
 };

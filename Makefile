@@ -7,7 +7,7 @@ decoder:
 	./output/bin/Decoder
 
 encoder:
-	g++ -g -Ilibs/ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g -w -Ilibs/ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/Encoder
 
 alignment:

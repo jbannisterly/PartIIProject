@@ -1,4 +1,6 @@
 #include "colours.hpp"
+#include <iostream>
+#include <math.h>
 
 int GetBit(std::vector<uint8_t> &data, int bitNo) {
     uint8_t byte = data[int(bitNo / 8)];
@@ -21,9 +23,9 @@ std::vector<uint8_t> ColourPixels::DataToPixels(std::vector<std::vector<uint8_t>
 
         Colour pixelColour = colourScheme.colours[pixelValue];
 
-        pixels.push_back(pixelColour.r);
-        pixels.push_back(pixelColour.g);
         pixels.push_back(pixelColour.b);
+        pixels.push_back(pixelColour.g);
+        pixels.push_back(pixelColour.r);
     }
 
     return pixels;
@@ -31,8 +33,4 @@ std::vector<uint8_t> ColourPixels::DataToPixels(std::vector<std::vector<uint8_t>
 
 std::vector<std::vector<uint8_t>> ColourPixels::PixelsToData(std::vector<uint8_t> &pixels) {
     return std::vector<std::vector<uint8_t>>();
-}
-
-int main() {
-    return 0;
 }
