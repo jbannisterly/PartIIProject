@@ -10,6 +10,10 @@ struct Colour {
     r {inR} ,
     g {inG} ,
     b {inB} { }
+
+    bool operator==(const Colour &colour) {
+        return colour.b == this->b && colour.g == this->g && colour.r == this->r;
+    }
 };
 
 struct ColourScheme {
@@ -23,6 +27,8 @@ class ColourPixels {
     private:
 
     ColourScheme colourScheme;
+    std::vector<uint8_t> PixelsToColourIndex(std::vector<uint8_t> &pixels);
+    std::vector<uint8_t> ColoursToData(std::vector<uint8_t> &colourIndex, int splitIndex);
 
     public:
 
