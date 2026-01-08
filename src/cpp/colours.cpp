@@ -40,9 +40,12 @@ std::vector<uint8_t> ColourPixels::PixelsToColourIndex(std::vector<uint8_t> &pix
 
     for (int i = 0; i < indices.size(); i++) {
         uint8_t index = 0;
+        double minDistance = 1000;
         Colour lookup(pixels[index * 3], pixels[index * 3 + 1], pixels[index * 3 + 2]);
         for (int j = 0; j < colourScheme.colours.size(); i++) {
-            if (lookup == colourScheme.colours[i]) {
+            double distance = Colour::distance(colourScheme.colours[i], lookup);
+            if (distance < minDistance) {
+                minDistance = distance;
                 index = j;
             }
         }

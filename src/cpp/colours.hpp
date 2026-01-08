@@ -14,6 +14,12 @@ struct Colour {
     bool operator==(const Colour &colour) {
         return colour.b == this->b && colour.g == this->g && colour.r == this->r;
     }
+
+    static double distance(const Colour &colour1, const Colour &colour2) {
+        return  std::abs(colour1.b - colour2.b) + 
+                std::abs(colour1.g - colour2.g) + 
+                std::abs(colour1.r - colour2.r);
+    }
 };
 
 struct ColourScheme {
