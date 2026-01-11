@@ -39,9 +39,9 @@ colours:
 	g++ -o output/bin/Colours src/cpp/colours.cpp
 
 full:
-	g++ -Ilibs/ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g -w -Ilibs/ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp `pkg-config --cflags --libs opencv4 zlib`
 	g++ -o output/bin/Alignment src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp `pkg-config --cflags --libs opencv4`
-	g++ -Ilibs/ -o output/bin/Decoder src/cpp/decoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g -w -Ilibs/ -o output/bin/Decoder src/cpp/decoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/Encoder
 	python src/python/distorter.py
 	./output/bin/Alignment
