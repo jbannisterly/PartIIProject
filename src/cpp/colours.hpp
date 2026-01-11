@@ -1,5 +1,6 @@
 #include <vector>
 #include <cstdint>
+#include <cmath>
 
 struct Colour {
     uint8_t r;
@@ -33,13 +34,13 @@ class ColourPixels {
     private:
 
     ColourScheme colourScheme;
-    std::vector<uint8_t> PixelsToColourIndex(std::vector<uint8_t> &pixels);
-    std::vector<uint8_t> ColoursToData(std::vector<uint8_t> &colourIndex, int splitIndex);
+    std::vector<uint8_t> PixelsToColourIndex(std::vector<uint8_t> &pixels, int start, int end);
+    std::vector<uint8_t> ColoursToData(std::vector<uint8_t> &colourIndex, int splitIndex, int start, int end);
 
     public:
 
     std::vector<uint8_t> DataToPixels(std::vector<std::vector<uint8_t>> &data);
-    std::vector<std::vector<uint8_t>> PixelsToData(std::vector<uint8_t> &pixels);
+    std::vector<std::vector<uint8_t>> PixelsToData(std::vector<uint8_t> &pixels, int start, int end);
 
     ColourPixels (ColourScheme inColourScheme) :
     colourScheme {inColourScheme} { }
