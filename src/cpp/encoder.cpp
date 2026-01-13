@@ -140,7 +140,7 @@ std::vector<uint8_t> PixelsToBarcode(std::vector<uint8_t> pixels){
 }
 
 int main(){
-    char* message = "Hello World 1\nHello World 2\nHello World 3\n";
+    std::string message = "Hello World 1\nHello World 2\nHello World 3\n";
 
     std::vector<ErrorCorrectionVirtual*> errorCorrectors;
     errorCorrectors.push_back(new ErrorCorrection<255, 32>());
@@ -150,8 +150,9 @@ int main(){
     // std::vector<uint8_t> byteData = EncodeMessage(message);
 
     std::vector<uint8_t> byteData;
-    for (int i = 0; i < 1000; i++) {
-        byteData.push_back(i);
+    byteData.reserve(message.size());
+    for (int i = 0; i < message.size(); i++) {
+        byteData.push_back(message[i]);
     }
 
     std::vector<std::vector<uint8_t>> encodedData = EncodeMessage(byteData, errorCorrectors);
