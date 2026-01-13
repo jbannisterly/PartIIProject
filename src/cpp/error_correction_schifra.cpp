@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <cmath> 
-#include "error_correction.hpp"
+#include "error_correction_schifra.hpp"
 
 std::vector<uint8_t> ErrorCorrection::Encode(std::vector<uint8_t> rawData){
     int nBlocks = std::ceil((float)rawData.size() / (blockLen - fecLen));

@@ -25,7 +25,7 @@ class ErrorCorrectionVirtual {
 
 };
 
-template<uint8_t blockLen, uint8_t fecLen>
+template<int blockLen, int fecLen>
 class ErrorCorrection: public ErrorCorrectionVirtual {
     public:
 
@@ -61,7 +61,7 @@ class ErrorCorrection: public ErrorCorrectionVirtual {
             std::cout << blockDataOut.size();
 
             for (int j = 0; j < blockLen; j++){
-                encodedData.push_back(blockDataOut[j]);
+                encodedData.push_back(block.data[j]);
             }
         }
 

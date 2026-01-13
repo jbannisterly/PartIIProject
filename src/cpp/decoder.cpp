@@ -84,9 +84,9 @@ int main(){
         ColourPixels colourPix(colourScheme);
 
         std::vector<ErrorCorrectionVirtual*> errorCorrectors;
-        errorCorrectors.push_back(new ErrorCorrection<16, 4>());
-        errorCorrectors.push_back(new ErrorCorrection<16, 4>());
-        errorCorrectors.push_back(new ErrorCorrection<16, 4>());
+        errorCorrectors.push_back(new ErrorCorrection<255, 32>());
+        errorCorrectors.push_back(new ErrorCorrection<255, 32>());
+        errorCorrectors.push_back(new ErrorCorrection<255, 32>());
 
         int compressedLen = GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
         int nPixels = GetErrorCorrectionLen(compressedLen, errorCorrectors);

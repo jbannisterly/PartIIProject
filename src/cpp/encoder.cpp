@@ -143,14 +143,14 @@ int main(){
     char* message = "Hello World 1\nHello World 2\nHello World 3\n";
 
     std::vector<ErrorCorrectionVirtual*> errorCorrectors;
-    errorCorrectors.push_back(new ErrorCorrection<16, 4>());
-    errorCorrectors.push_back(new ErrorCorrection<16, 4>());
-    errorCorrectors.push_back(new ErrorCorrection<16, 4>());
+    errorCorrectors.push_back(new ErrorCorrection<255, 32>());
+    errorCorrectors.push_back(new ErrorCorrection<255, 32>());
+    errorCorrectors.push_back(new ErrorCorrection<255, 32>());
 
     // std::vector<uint8_t> byteData = EncodeMessage(message);
 
     std::vector<uint8_t> byteData;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1000; i++) {
         byteData.push_back(i);
     }
 
