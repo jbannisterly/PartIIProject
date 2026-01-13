@@ -24,6 +24,12 @@ std::vector<uint8_t> Compression::compress(std::vector<uint8_t> &data){
     std::vector<uint8_t> compressedVector(compressed, compressed + compressedLen);
     free(compressed);
 
+    std::cout << "compressed" << std::endl;
+    for (int i = 0; i < compressedVector.size(); i++) {
+        std::cout << int(compressedVector[i]) << " ";
+    }
+    std::cout << std::endl;
+
     return compressedVector;
 }
 
@@ -31,6 +37,12 @@ std::vector<uint8_t> Compression::decompress(uint8_t* data, int len){
     uLongf decompressedSize = len * 2;
     uint8_t* decompressed = (uint8_t*)malloc(sizeof(uint8_t));
     uLongf compressedLength = len;
+
+    std::cout << "compressed" << std::endl;
+    for (int i = 0; i < len; i++) {
+        std::cout << int(data[i]) << " ";
+    }
+    std::cout << std::endl;
 
     int error = -1;
     while(error){

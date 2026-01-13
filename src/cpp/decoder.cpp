@@ -5,6 +5,7 @@
 #include "compressor.hpp"
 #include "error_correction_schifra.hpp"
 #include "colours.hpp"
+#include <fstream>
 
 using namespace cv;
 
@@ -15,6 +16,8 @@ int GetErrorCorrectionLen(int compressedLen, std::vector<ErrorCorrectionVirtual*
         bytesPerChunk += errorCorrectors[i]->getDataLen();
     }
 
+    std::cout << "bytes per chunk " << bytesPerChunk << std::endl;
+
     int nChunks = int(ceil(compressedLen / (float)bytesPerChunk));
 
     return nChunks * errorCorrectors[0]->getBlockLen();
@@ -24,7 +27,7 @@ int GetCompressedLen(std::vector<uint8_t> &pixels, ColourPixels colourPix, Error
     std::vector<std::vector<uint8_t>> header = colourPix.PixelsToData(pixels, 0, errorCorrection->getBlockLen());
     std::vector<uint8_t> headerCorrected = errorCorrection->Decode(header[0]);
     
-    return ((int)headerCorrected[0] + ((int)headerCorrected[1]) << 8);
+    return ((int)headerCorrected[0] | ((int)headerCorrected[1]) << 8) + 2;
 }
 
 std::vector<std::vector<uint8_t>> ErrorDecodeSplit(std::vector<std::vector<uint8_t>> &splitBytes, std::vector<ErrorCorrectionVirtual*> &errorCorrectors) {
@@ -91,26 +94,49 @@ int main(){
         std::cout << "compressed len " << compressedLen << std::endl;
         std::cout << "nPixels " << nPixels << std::endl;
 
-        // std::vector<std::vector<uint8_t>> splitData = colourPix.PixelsToData(rawData);
+        std::ofstream outFile("output/debug/decPixels2");
+        int iii = 0;
+        for (const auto &e : rawData) 
+        {
+            if (iii < 1538) {
+                outFile << int(e) << "\n";
+                iii++;
+            }
+        }
+        outFile.close();
 
-        // std::cout << "sd len " << splitData[0].size();
+        std::vector<std::vector<uint8_t>> splitData = colourPix.PixelsToData(rawData, 0, nPixels);
+        // split data is incorrect
+
+        for (int i = 0; i < splitData.size(); i++) {
+            std::cout << "sd len " << i << " " << splitData[i].size() << std::endl;
+        }
 
 
-        // std::vector<std::vector<uint8_t>> correctedSplitData = ErrorDecodeSplit(splitData, errorCorrectors);
+        std::vector<std::vector<uint8_t>> correctedSplitData = ErrorDecodeSplit(splitData, errorCorrectors);
 
         // uint16_t messageLength = ((uint16_t*)bytePointer)[0] / 8;
         // uint16_t errorCorrectionMessageLength = std::ceil((float)messageLength / 64) * 64;
+
+        std::vector<uint8_t> vectorData;
+        vectorData.reserve(compressedLen);
+
+        for (int i = 0; i < correctedSplitData.size(); i++) {
+            std::cout << "csd len " << i << " " << correctedSplitData[i].size() << std::endl;            
+            vectorData.insert(vectorData.end(), correctedSplitData[i].begin(), correctedSplitData[i].end());
+        }
+
 
         // std::vector<uint8_t> vectorData(bytePointer + 2, bytePointer + 2 + errorCorrectionMessageLength);
         // ErrorCorrection<64, 16> errorCorrector;
         // std::vector<uint8_t> deErrored = errorCorrector.Decode(vectorData);
 
 
-        // std::vector<uint8_t> decompressed = Compression::decompress(deErrored.data(), messageLength); 
+        std::vector<uint8_t> decompressed = Compression::decompress(vectorData.data() + 2, compressedLen - 2); 
 
-        // for (int i = 0; i < decompressed.size(); i++){
-        //     std::cout << (char)decompressed[i];
-        // }
+        for (int i = 0; i < decompressed.size(); i++){
+            std::cout << (char)decompressed[i];
+        }
 
     } catch (const ExceptionDecompression& e){
         std::cout << e.what() << std::endl;

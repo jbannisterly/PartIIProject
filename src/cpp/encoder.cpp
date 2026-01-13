@@ -8,15 +8,20 @@
 #include <vector>
 #include "colours.hpp"
 #include "_config.hpp"
+#include "fstream"
 
 using namespace cv;
 
 std::vector<std::vector<uint8_t>> ErrorCorrectionSplit(std::vector<std::vector<uint8_t>> &splitBytes, std::vector<ErrorCorrectionVirtual*> &errorCorrectors) {
     std::vector<std::vector<uint8_t>> splitError;
     splitError.reserve(splitBytes.size());
-    
+
     for (int i = 0; i < splitBytes.size(); i++) {
-        splitError.push_back(errorCorrectors[i]->Encode(splitBytes[i]));
+        std::vector<uint8_t> encodedSplit = errorCorrectors[i]->Encode(splitBytes[i]);
+        std::ofstream outFile("output/debug/x_splitbytes" + std::to_string(i));
+        for (const auto &e : encodedSplit) outFile << int(e) << "\n";
+        outFile.close();
+        splitError.push_back(encodedSplit);
     }
 
     return splitError;
@@ -46,11 +51,13 @@ std::vector<std::vector<uint8_t>> SplitBytes(std::vector<uint8_t> &data, std::ve
         std::cout << endIndex << std::endl;
 
         if (endIndex > data.size()) {
-            padding = data.size() - endIndex;
+            padding = endIndex - data.size();
             endIndex = data.size();
             std::cout << "Too big" << std::endl;
         }
         std::vector<uint8_t> splitData(data.cbegin() + startIndex, data.cbegin() + endIndex);
+        std::cout << "size " << endIndex - startIndex << std::endl;
+        std::cout << "padding " << padding << std::endl;
         for (int j = 0; j < padding; j++) {
             splitData.push_back(0);
         }
@@ -80,11 +87,15 @@ std::vector<std::vector<uint8_t>> EncodeMessage(std::vector<uint8_t> rawData, st
 
     std::vector<std::vector<uint8_t>> splitData = SplitBytes(compressedData, errorCorrectors);
 
-    std::cout << "Split length " << splitData[0].size() << std::endl;
+    for (int i = 0; i < splitData.size(); i++) {
+        std::cout << "csd " << i << " " << splitData[i].size() << std::endl;
+    }
 
     std::vector<std::vector<uint8_t>> errorSplitData = ErrorCorrectionSplit(splitData,errorCorrectors);
 
-    std::cout << "Error length " << errorSplitData[0].size() << std::endl;
+    for (int i = 0; i < errorSplitData.size(); i++) {
+        std::cout << "sd " << i << " " << errorSplitData[i].size() << std::endl;
+    }
 
     return errorSplitData;
 }
@@ -160,6 +171,8 @@ int main(){
     ColourPixels colourPix(colourScheme);
 
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(encodedData);
+
+    std::cout << "n pixels " << pixelData.size() / 3 / 8 << std::endl;
 
     std::vector<uint8_t> imageData = PixelsToBarcode(pixelData);
 

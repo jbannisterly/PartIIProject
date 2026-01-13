@@ -9,11 +9,12 @@
 #include <iostream>
 #include <stdint.h>
 #include <cmath> 
+#include <fstream>
 
 class ErrorCorrectionVirtual {
     public:
     
-    virtual std::vector<uint8_t> Encode(std::vector<uint8_t> rawData) = 0;
+    virtual std::vector<uint8_t> Encode(std::vector<uint8_t> &rawData) = 0;
     virtual std::vector<uint8_t> Decode(std::vector<uint8_t> encodedData) = 0;
     virtual uint8_t getBlockLen() = 0;
     virtual uint8_t getFECLen() = 0;
@@ -28,7 +29,7 @@ template<uint8_t blockLen, uint8_t fecLen>
 class ErrorCorrection: public ErrorCorrectionVirtual {
     public:
 
-    std::vector<uint8_t> Encode(std::vector<uint8_t> rawData) override {
+    std::vector<uint8_t> Encode(std::vector<uint8_t> &rawData) override {
         int nBlocks = std::ceil((float)rawData.size() / (blockLen - fecLen));
 
         std::vector<uint8_t> encodedData;
@@ -41,17 +42,26 @@ class ErrorCorrection: public ErrorCorrectionVirtual {
         schifra::reed_solomon::block<blockLen, fecLen> block;
         std::string inData;
 
+        int padding = nBlocks * (blockLen - fecLen) - rawData.size();
+        std::vector<uint8_t> paddedData;
+        paddedData.reserve(nBlocks * (blockLen - fecLen));
+        paddedData.insert(paddedData.end(), rawData.begin(), rawData.end());
+        for (int i = 0; i < padding; i++) {
+            paddedData.push_back(0);
+        }
+
         for (int i = 0; i < nBlocks; i++){
-            if (i == nBlocks - 1){
-                inData = std::string((char*)rawData.data() + i * (blockLen - fecLen), rawData.size() % (blockLen - fecLen));
-                inData.resize((blockLen - fecLen), 0);
-            }else{
-                inData = std::string((char*)rawData.data() + i * (blockLen - fecLen), (blockLen - fecLen));
-            }
+            inData = std::string((char*)paddedData.data() + i * (blockLen - fecLen), (blockLen - fecLen));
+            inData.resize(blockLen, 0);
             encoder.encode(inData, block);
 
+            std::string blockDataOut;
+            blockDataOut.resize(blockLen);
+            block.data_to_string(blockDataOut);
+            std::cout << blockDataOut.size();
+
             for (int j = 0; j < blockLen; j++){
-                encodedData.push_back(block.data[j]);
+                encodedData.push_back(blockDataOut[j]);
             }
         }
 

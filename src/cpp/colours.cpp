@@ -57,7 +57,6 @@ std::vector<uint8_t> ColourPixels::PixelsToColourIndex(std::vector<uint8_t> &pix
     return indices;
 }
 
-// TODO: this
 std::vector<uint8_t> ColourPixels::ColoursToData(std::vector<uint8_t> &colourIndex, int splitIndex, int start, int end) {
     std::vector<uint8_t> data;
     data.reserve(end - start);
