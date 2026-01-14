@@ -18,9 +18,6 @@ std::vector<std::vector<uint8_t>> ErrorCorrectionSplit(std::vector<std::vector<u
 
     for (int i = 0; i < splitBytes.size(); i++) {
         std::vector<uint8_t> encodedSplit = errorCorrectors[i]->Encode(splitBytes[i]);
-        std::ofstream outFile("output/debug/x_splitbytes" + std::to_string(i));
-        for (const auto &e : encodedSplit) outFile << int(e) << "\n";
-        outFile.close();
         splitError.push_back(encodedSplit);
     }
 
@@ -76,7 +73,12 @@ std::vector<std::vector<uint8_t>> EncodeMessage(std::vector<uint8_t> rawData, st
 
     // memcpy(rawData, message, length);
 
-    std::vector<uint8_t> compressedData = Compression::compress(rawData);
+    // std::vector<uint8_t> compressedData = Compression::compress(rawData);
+    std::vector<uint8_t> compressedData;
+    compressedData.reserve(2000);
+    for (int i = 0; i < 2000; i++) {
+        compressedData.push_back(i % 256);
+    }
 
     std::cout << "Compressed length " << compressedData.size() << std::endl; 
     
@@ -87,11 +89,22 @@ std::vector<std::vector<uint8_t>> EncodeMessage(std::vector<uint8_t> rawData, st
 
     std::vector<std::vector<uint8_t>> splitData = SplitBytes(compressedData, errorCorrectors);
 
+
     for (int i = 0; i < splitData.size(); i++) {
         std::cout << "csd " << i << " " << splitData[i].size() << std::endl;
     }
 
     std::vector<std::vector<uint8_t>> errorSplitData = ErrorCorrectionSplit(splitData,errorCorrectors);
+
+
+            std::ofstream outFile("output/debug/split_encode");
+        for (int i = 0; i < errorSplitData.size(); i++) {
+        for (int j = 0; j < errorSplitData[i].size(); j++) {
+            outFile << int(errorSplitData[i][j]) << "\n";
+        }
+        outFile << "---\n"; 
+        }
+        outFile.close();
 
     for (int i = 0; i < errorSplitData.size(); i++) {
         std::cout << "sd " << i << " " << errorSplitData[i].size() << std::endl;

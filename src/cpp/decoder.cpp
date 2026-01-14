@@ -94,16 +94,16 @@ int main(){
         std::cout << "compressed len " << compressedLen << std::endl;
         std::cout << "nPixels " << nPixels << std::endl;
 
-        std::ofstream outFile("output/debug/decPixels2");
-        int iii = 0;
-        for (const auto &e : rawData) 
-        {
-            if (iii < 1538) {
-                outFile << int(e) << "\n";
-                iii++;
-            }
-        }
-        outFile.close();
+        // std::ofstream outFile("output/debug/decPixels2");
+        // int iii = 0;
+        // for (const auto &e : rawData) 
+        // {
+        //     if (iii < 1538) {
+        //         outFile << int(e) << "\n";
+        //         iii++;
+        //     }
+        // }
+        // outFile.close();
 
         std::vector<std::vector<uint8_t>> splitData = colourPix.PixelsToData(rawData, 0, nPixels);
         // split data is incorrect
@@ -112,6 +112,14 @@ int main(){
             std::cout << "sd len " << i << " " << splitData[i].size() << std::endl;
         }
 
+        std::ofstream outFile("output/debug/split_decode");
+        for (int i = 0; i < splitData.size(); i++) {
+        for (int j = 0; j < splitData[i].size(); j++) {
+            outFile << int(splitData[i][j]) << "\n";
+        }
+        outFile << "---\n"; 
+        }
+        outFile.close();
 
         std::vector<std::vector<uint8_t>> correctedSplitData = ErrorDecodeSplit(splitData, errorCorrectors);
 

@@ -83,7 +83,9 @@ class ErrorCorrection: public ErrorCorrectionVirtual {
             std::string fec((char*)encodedData.data() + i * blockLen + blockLen - fecLen, fecLen); 
 
             block = schifra::reed_solomon::block<blockLen, fecLen>(data, fec);
-            decoder.decode(block);
+            if (!decoder.decode(block)) {
+                std::cout << "Error in decoding" << std::endl;
+            }
 
             for (int j = 0; j < (blockLen - fecLen); j++){
                 decodedData.push_back(block.data[j]);
