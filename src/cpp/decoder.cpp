@@ -7,6 +7,7 @@
 #include <fstream>
 #include "splitError.hpp"
 #include "splitBytes.hpp"
+#include "barcode_writer.hpp"
 
 using namespace cv;
 
@@ -31,24 +32,6 @@ int GetCompressedLen(std::vector<uint8_t> &pixels, ColourPixels colourPix, Error
     return ((int)headerCorrected[0] | ((int)headerCorrected[1]) << 8) + 2;
 }
 
-
-std::vector<uint8_t> BarcodeToPixels(std::vector<uint8_t> barcode, int barcodeSize){
-    BarcodeLayout barcodeLayout = GetBarcode();
-    std::vector<uint8_t> pixels;
-    pixels.reserve(barcodeSize * 3);
-    int pixelCounter = 0;
-
-    for (int i = 0; i < barcodeSize; i++){
-        if (barcodeLayout.mask[i] > 0){
-            for (int j = 0; j < 3; j++) {
-                pixels.push_back(barcode[i * 3 + j]);
-            }
-        } 
-    }
-
-    return pixels;
-}
-
 int main(){
     try {
         Mat image = imread("output/img/output_align.png");
@@ -59,7 +42,9 @@ int main(){
         int totalLength = rows * cols * channels;
 
         std::vector<uint8_t> imageBytes = MatToBytes(image);
-        std::vector<uint8_t> rawData = BarcodeToPixels(imageBytes, totalLength);
+
+        BarcodeWriter writer(GetBarcode());
+        std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
     std::vector<Colour> colours = {
         Colour(0, 0, 0),
@@ -82,23 +67,7 @@ int main(){
         int compressedLen = GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
         int nPixels = GetErrorCorrectionLen(compressedLen, errorCorrectors);
 
-        std::cout << "compressed len " << compressedLen << std::endl;
-        std::cout << "nPixels " << nPixels << std::endl;
-
         std::vector<std::vector<uint8_t>> splitData = colourPix.PixelsToData(rawData, 0, nPixels);
-
-        for (int i = 0; i < splitData.size(); i++) {
-            std::cout << "sd len " << i << " " << splitData[i].size() << std::endl;
-        }
-
-        std::ofstream outFile("output/debug/split_decode");
-        for (int i = 0; i < splitData.size(); i++) {
-        for (int j = 0; j < splitData[i].size(); j++) {
-            outFile << int(splitData[i][j]) << "\n";
-        }
-        outFile << "---\n"; 
-        }
-        outFile.close();
 
         SplitError splitError(errorCorrectors);
         std::vector<std::vector<uint8_t>> correctedSplitData = splitError.Decode(splitData);
