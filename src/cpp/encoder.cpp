@@ -4,25 +4,14 @@
 #include <cstring>
 #include "barcode_layout.hpp"
 #include "compressor.hpp"
-#include "error_correction_schifra.hpp"
+// #include "error_correction_schifra.hpp"
 #include <vector>
 #include "colours.hpp"
 #include "_config.hpp"
 #include "fstream"
+#include "splitError.hpp"
 
 using namespace cv;
-
-std::vector<std::vector<uint8_t>> ErrorCorrectionSplit(std::vector<std::vector<uint8_t>> &splitBytes, std::vector<ErrorCorrectionVirtual*> &errorCorrectors) {
-    std::vector<std::vector<uint8_t>> splitError;
-    splitError.reserve(splitBytes.size());
-
-    for (int i = 0; i < splitBytes.size(); i++) {
-        std::vector<uint8_t> encodedSplit = errorCorrectors[i]->Encode(splitBytes[i]);
-        splitError.push_back(encodedSplit);
-    }
-
-    return splitError;
-}
 
 std::vector<std::vector<uint8_t>> SplitBytes(std::vector<uint8_t> &data, std::vector<ErrorCorrectionVirtual*> &errorCorrectors) {
     std::vector<std::vector<uint8_t>> splitBytes;
@@ -94,17 +83,17 @@ std::vector<std::vector<uint8_t>> EncodeMessage(std::vector<uint8_t> rawData, st
         std::cout << "csd " << i << " " << splitData[i].size() << std::endl;
     }
 
-    std::vector<std::vector<uint8_t>> errorSplitData = ErrorCorrectionSplit(splitData,errorCorrectors);
+    SplitError split(errorCorrectors);
+    std::vector<std::vector<uint8_t>> errorSplitData = split.Encode(splitData);
 
-
-            std::ofstream outFile("output/debug/split_encode");
+    std::ofstream outFile("output/debug/split_encode");
         for (int i = 0; i < errorSplitData.size(); i++) {
         for (int j = 0; j < errorSplitData[i].size(); j++) {
             outFile << int(errorSplitData[i][j]) << "\n";
         }
         outFile << "---\n"; 
         }
-        outFile.close();
+    outFile.close();
 
     for (int i = 0; i < errorSplitData.size(); i++) {
         std::cout << "sd " << i << " " << errorSplitData[i].size() << std::endl;
@@ -160,8 +149,6 @@ int main(){
     errorCorrectors.push_back(new ErrorCorrection<255, 32>());
     errorCorrectors.push_back(new ErrorCorrection<255, 32>());
 
-    // std::vector<uint8_t> byteData = EncodeMessage(message);
-
     std::vector<uint8_t> byteData;
     byteData.reserve(message.size());
     for (int i = 0; i < message.size(); i++) {
@@ -172,7 +159,6 @@ int main(){
 
     std::vector<std::vector<uint8_t>> encodedData = EncodeMessage(byteData, errorCorrectors);
     
-    // std::vector<std::vector<uint8_t> pixelData = MessageToPixels(byteData, errorCorrectors);
     std::vector<Colour> colours = {
         Colour(0, 0, 0),
         Colour(255, 255, 255),

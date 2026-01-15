@@ -3,11 +3,11 @@ make:
 	g++ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp `pkg-config --cflags --libs opencv4`
 
 decoder:
-	g++ -g -w -Ilibs/ -o output/bin/Decoder src/cpp/decoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g -w -Ilibs/ -o output/bin/Decoder src/cpp/decoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/splitError.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/Decoder
 
 encoder:
-	g++ -g -w -Ilibs/ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g -w -Ilibs/ -o output/bin/Encoder src/cpp/encoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/splitError.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/Encoder
 
 alignment:
