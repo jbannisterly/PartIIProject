@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 #include <schifra/schifra_galois_field.hpp>
 #include <schifra/schifra_galois_field_polynomial.hpp>

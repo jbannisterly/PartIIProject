@@ -3,10 +3,10 @@
 #include "barcode_layout.hpp"
 #include "image_aux.hpp"
 #include "compressor.hpp"
-// #include "error_correction_schifra.hpp"
 #include "colours.hpp"
 #include <fstream>
 #include "splitError.hpp"
+#include "splitBytes.hpp"
 
 using namespace cv;
 
@@ -100,18 +100,13 @@ int main(){
         }
         outFile.close();
 
-        SplitError split(errorCorrectors);
-        std::vector<std::vector<uint8_t>> correctedSplitData = split.Decode(splitData);
+        SplitError splitError(errorCorrectors);
+        std::vector<std::vector<uint8_t>> correctedSplitData = splitError.Decode(splitData);
 
-        std::vector<uint8_t> vectorData;
-        vectorData.reserve(compressedLen);
+        SplitBytes splitBytes;
+        std::vector connectedData = splitBytes.Decode(correctedSplitData, compressedLen);
 
-        for (int i = 0; i < correctedSplitData.size(); i++) {
-            std::cout << "csd len " << i << " " << correctedSplitData[i].size() << std::endl;            
-            vectorData.insert(vectorData.end(), correctedSplitData[i].begin(), correctedSplitData[i].end());
-        }
-
-        std::vector<uint8_t> decompressed = Compression::decompress(vectorData.data() + 2, compressedLen - 2); 
+        std::vector<uint8_t> decompressed = Compression::decompress(connectedData.data() + 2, compressedLen - 2); 
 
         for (int i = 0; i < decompressed.size(); i++){
             std::cout << (char)decompressed[i];
