@@ -5,9 +5,11 @@
 #include "compressor.hpp"
 #include "colours.hpp"
 #include <fstream>
-#include "splitError.hpp"
-#include "splitBytes.hpp"
+#include "split_error.hpp"
+#include "split_bytes.hpp"
 #include "barcode_writer.hpp"
+#include "colour_palletes.hpp"
+#include "error_layout.hpp"
 
 using namespace cv;
 
@@ -46,23 +48,8 @@ int main(){
         BarcodeWriter writer(GetBarcode());
         std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
-    std::vector<Colour> colours = {
-        Colour(0, 0, 0),
-        Colour(255, 255, 255),
-        Colour(255, 0, 0),
-        Colour(255, 255, 0),
-        Colour(0, 255, 0),
-        Colour(255, 0, 255),
-        Colour(0, 0, 255),
-        Colour(0, 255, 255),
-    };
-        ColourScheme colourScheme(colours);
-        ColourPixels colourPix(colourScheme);
-
-        std::vector<ErrorCorrectionVirtual*> errorCorrectors;
-        errorCorrectors.push_back(new ErrorCorrection<255, 32>());
-        errorCorrectors.push_back(new ErrorCorrection<255, 32>());
-        errorCorrectors.push_back(new ErrorCorrection<255, 32>());
+        ColourPixels colourPix = ColourPalletes::Bit_3();
+        std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
 
         int compressedLen = GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
         int nPixels = GetErrorCorrectionLen(compressedLen, errorCorrectors);
@@ -72,8 +59,7 @@ int main(){
         SplitError splitError(errorCorrectors);
         std::vector<std::vector<uint8_t>> correctedSplitData = splitError.Decode(splitData);
 
-        SplitBytes splitBytes;
-        std::vector connectedData = splitBytes.Decode(correctedSplitData, compressedLen);
+        std::vector connectedData = SplitBytes::Decode(correctedSplitData, compressedLen);
 
         std::vector<uint8_t> decompressed = Compression::decompress(connectedData.data() + 2, compressedLen - 2); 
 

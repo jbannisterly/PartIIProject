@@ -1,4 +1,4 @@
-#include "splitError.hpp"
+#include "split_error.hpp"
 
     std::vector<std::vector<uint8_t>> SplitError::Encode(std::vector<std::vector<uint8_t>> &splitBytes) {
         std::vector<std::vector<uint8_t>> splitError;
