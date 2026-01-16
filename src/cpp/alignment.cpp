@@ -220,13 +220,13 @@ std::vector<FinderCandidate> FinderPatterns(int patternSize, std::vector<uint8_t
             for (int j = 0; j < patternSize; j++){
                 centre -= w[j] / 2;
             }
-            if (patternSize == 3 && width > 20) {
-                std::cout << "Found pattern ";
-                for (int j = 0; j < patternSize; j++){
-                    std::cout << w[j] << " ";
-                }
-                std::cout << "at " << centre - int(centre / sizeX) * sizeX << "," << int(centre / sizeX) << std::endl;
-            }
+            // if (patternSize == 3 && width > 20) {
+            //     std::cout << "Found pattern ";
+            //     for (int j = 0; j < patternSize; j++){
+            //         std::cout << w[j] << " ";
+            //     }
+            //     std::cout << "at " << centre - int(centre / sizeX) * sizeX << "," << int(centre / sizeX) << std::endl;
+            // }
 
             finder.push_back(FinderCandidate(centre / sizeX, centre - int(centre / sizeX) * sizeX, width));
         }
@@ -573,7 +573,7 @@ std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders, FinderCa
     bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
     bounds[1] = findersVec[1] + ((findersVec[1] - findersVec[3]).Normalise() * finders[1].width * sqrt(2) * (MODULEOFFSET / 7));
     bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[0]).Normalise() * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[1]).Normalise() * finders[3].width * sqrt(2) * (MODULEOFFSET4 / 5));
+    bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[1]).Normalise() * finders[3].width * sqrt(2) * (MODULEOFFSET / 7));
 
     return bounds;
 }
@@ -621,7 +621,7 @@ int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     return int((sizeEstimateH + sizeEstimateV) / 2);
 }
 
-std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite) {
+std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, FinderCandidate estimatedCentre) {
     std::vector<FinderCandidate> finder = FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
 
     if (patternSize == 3) {
@@ -656,7 +656,10 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
     for (int i = 0; i < finderGroups.size(); i++){
         int qualNX = finderGroups[i].size();
         int qualWidth = finderGroups[i].Centre().width;
-        quality[i] = qualNX * qualWidth;
+        double distance = 
+                pow((finderGroups[i].Centre().x / inputImage.cols - estimatedCentre.x), 2)
+            +   pow((finderGroups[i].Centre().y / inputImage.rows - estimatedCentre.y), 2);
+        quality[i] = qualNX * qualWidth * (1 - distance);
     }
 
     std::sort(finderGroupsValidIndex.begin(), finderGroupsValidIndex.end(), [&quality](int a, int b){
@@ -704,8 +707,8 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 
     std::cout << "Threshold" << std::endl;
 
-    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, false);
-    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(3, threshold, data, inputImage, PatternValid_QR_4, false);
+    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, false, FinderCandidate(.5, .5, 0));
+    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, true, FinderCandidate(1., 1., 0.));
 
     std::array<FinderCandidate, 3> centresOrdered = OrderCentres(centres);
 

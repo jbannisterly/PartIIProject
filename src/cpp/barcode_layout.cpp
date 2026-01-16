@@ -14,7 +14,7 @@ void DrawSquare(BarcodeLayout &barcode, uint8_t colour, int positionX, int posit
     }
 }
 
-BarcodeLayout GetBarcode(){
+BarcodeLayout GetBarcode3(){
     BarcodeLayout barcode = BarcodeLayout();
     int size = BARCODE_SIZE * BARCODE_SIZE;
 
@@ -37,11 +37,26 @@ BarcodeLayout GetBarcode(){
         DrawSquare(barcode, 0, posX[i] + 2, posY[i] + 2, BARCODE_SIZE, 3);
     }
 
-    // Extra 4th corner
+    return barcode;
+}
+
+BarcodeLayout GetBarcode4Simple() {
+    BarcodeLayout barcode = GetBarcode3();
 
     DrawSquare(barcode, 255, BARCODE_SIZE - 9, BARCODE_SIZE - 9, BARCODE_SIZE, 7);
     DrawSquare(barcode, 0, BARCODE_SIZE - 8, BARCODE_SIZE - 8, BARCODE_SIZE, 5);
     DrawSquare(barcode, 255, BARCODE_SIZE - 7, BARCODE_SIZE - 7, BARCODE_SIZE, 3);
+
+    return barcode;
+}
+
+BarcodeLayout GetBarcode4Detailed() {
+    BarcodeLayout barcode = GetBarcode3();
+
+    DrawSquare(barcode, 0, BARCODE_SIZE - 9, BARCODE_SIZE - 9, BARCODE_SIZE, 9);
+    DrawSquare(barcode, 255, BARCODE_SIZE - 8, BARCODE_SIZE - 8, BARCODE_SIZE, 7);
+    DrawSquare(barcode, 0, BARCODE_SIZE - 7, BARCODE_SIZE - 7, BARCODE_SIZE, 5);
+    DrawSquare(barcode, 255, BARCODE_SIZE - 6, BARCODE_SIZE - 6, BARCODE_SIZE, 3);
 
     return barcode;
 }

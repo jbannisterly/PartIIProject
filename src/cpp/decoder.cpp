@@ -25,7 +25,7 @@ int main(){
 
         std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-        BarcodeWriter writer(GetBarcode());
+        BarcodeWriter writer(GetBarcode4Detailed());
         std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
         ColourPixels colourPix = ColourPalletes::Bit_3();

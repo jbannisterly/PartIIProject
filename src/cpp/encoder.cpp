@@ -39,7 +39,7 @@ int main(){
 
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(errorSplitData);
 
-    BarcodeWriter writer(GetBarcode());
+    BarcodeWriter writer(GetBarcode4Detailed());
     std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData);
 
     Mat image(BARCODE_SIZE, BARCODE_SIZE, CV_8UC3);

@@ -10,4 +10,6 @@ struct BarcodeLayout{
     std::vector<uint8_t> mask;
 };
 
-BarcodeLayout GetBarcode();
+BarcodeLayout GetBarcode3();
+BarcodeLayout GetBarcode4Simple();
+BarcodeLayout GetBarcode4Detailed();
