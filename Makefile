@@ -6,6 +6,10 @@ unit:
 	g++ -g -w -Ilibs/ -o output/bin/UnitTest src/cpp/unit_test.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/UnitTest
 
+e2e:
+	g++ -g -w -Ilibs/ -o output/bin/E2E src/cpp/e2e_test.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp `pkg-config --cflags --libs opencv4 zlib`
+	./output/bin/E2E
+
 decoder:
 	g++ -g -w -Ilibs/ -o output/bin/Decoder src/cpp/decoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/Decoder

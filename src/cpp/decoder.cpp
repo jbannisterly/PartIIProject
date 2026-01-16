@@ -23,7 +23,7 @@ int main(){
         int cols = image.cols;
         int totalLength = rows * cols * channels;
 
-        std::vector<uint8_t> imageBytes = MatToBytes(image);
+        std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
         BarcodeWriter writer(GetBarcode());
         std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
@@ -39,7 +39,7 @@ int main(){
         SplitError splitError(errorCorrectors);
         std::vector<std::vector<uint8_t>> correctedSplitData = splitError.Decode(splitData);
 
-        std::vector connectedData = SplitBytes::Decode(correctedSplitData, compressedLen / 3);
+        std::vector connectedData = SplitBytes::Decode(correctedSplitData, compressedLen + 2);
 
         std::vector<uint8_t> decompressed = Compression::decompress(connectedData.data() + 2, compressedLen); 
 
