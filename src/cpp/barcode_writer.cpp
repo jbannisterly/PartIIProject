@@ -6,6 +6,14 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
     int sourceCounter = 0;
     int targetCounter = 0;
 
+    for (int i = 0; i < layout.mask.size(); i++) {
+        if (layout.mask[i] > 0) {
+            for (int j = 0; j < 3; j++) {
+                layout.data[i * 3 + j] = (i * 92 + j * 180) % 256;
+            }
+        }
+    }
+
     while(sourceCounter < pixels.size()){
         if (layout.mask[targetCounter] > 0){
             for (int i = 0; i < 3; i++) {
@@ -15,6 +23,8 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
         }
         targetCounter++;
     }
+
+
 
     return layout.data;
 }
