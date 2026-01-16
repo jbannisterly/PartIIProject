@@ -7,6 +7,7 @@
 #include "vector_helper.hpp"
 #include "profiling.hpp"
 #include <functional>
+#include "image_aux.hpp"
 
 using namespace cv;
 
@@ -689,7 +690,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     Debug.reserve(nPixels);
     for(int i = 0; i < nPixels; i++) Debug[i] = 0;
 
-    std::vector<uint8_t> data = MatToBytes(inputImage);
+    std::vector<uint8_t> data = ImageAux::MatToBytes(inputImage);
 
     std::vector<double> grey = Greyscale(data, nPixels);
     std::vector<uint8_t> threshold = Threshold(grey, inputImage.rows, inputImage.cols);
