@@ -13,6 +13,7 @@
 #include "barcode_writer.hpp"
 #include "colour_palletes.hpp"
 #include "error_layout.hpp"
+#include "header_data.hpp"
 
 using namespace cv;
 
@@ -29,10 +30,7 @@ int main(){
     ColourPixels colourPix = ColourPalletes::Bit_3();
 
     std::vector<uint8_t> compressedData = Compression::compress(byteData);
-    compressedData.insert(compressedData.begin(), {
-        (compressedData.size() >> 0) & 255,
-        (compressedData.size() >> 8) & 255
-    });
+    HeaderData::PrependLength(compressedData);
 
     std::vector<std::vector<uint8_t>> splitData = SplitBytes::Encode(compressedData, errorCorrectors);
 

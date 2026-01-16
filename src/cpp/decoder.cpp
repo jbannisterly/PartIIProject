@@ -10,29 +10,9 @@
 #include "barcode_writer.hpp"
 #include "colour_palletes.hpp"
 #include "error_layout.hpp"
+#include "header_data.hpp"
 
 using namespace cv;
-
-int GetErrorCorrectionLen(int compressedLen, std::vector<ErrorCorrectionVirtual*> errorCorrectors) {
-    int bytesPerChunk = 0;
-    
-    for (int i = 0; i < errorCorrectors.size(); i++) {
-        bytesPerChunk += errorCorrectors[i]->getDataLen();
-    }
-
-    std::cout << "bytes per chunk " << bytesPerChunk << std::endl;
-
-    int nChunks = int(ceil(compressedLen / (float)bytesPerChunk));
-
-    return nChunks * errorCorrectors[0]->getBlockLen();
-}
-
-int GetCompressedLen(std::vector<uint8_t> &pixels, ColourPixels colourPix, ErrorCorrectionVirtual* errorCorrection) {
-    std::vector<std::vector<uint8_t>> header = colourPix.PixelsToData(pixels, 0, errorCorrection->getBlockLen());
-    std::vector<uint8_t> headerCorrected = errorCorrection->Decode(header[0]);
-    
-    return ((int)headerCorrected[0] | ((int)headerCorrected[1]) << 8) + 2;
-}
 
 int main(){
     try {
@@ -51,8 +31,8 @@ int main(){
         ColourPixels colourPix = ColourPalletes::Bit_3();
         std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
 
-        int compressedLen = GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
-        int nPixels = GetErrorCorrectionLen(compressedLen, errorCorrectors);
+        int compressedLen = HeaderData::GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
+        int nPixels = HeaderData::GetErrorCorrectionLen(compressedLen, errorCorrectors);
 
         std::vector<std::vector<uint8_t>> splitData = colourPix.PixelsToData(rawData, 0, nPixels);
 
