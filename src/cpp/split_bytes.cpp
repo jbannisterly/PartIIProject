@@ -41,9 +41,11 @@ namespace SplitBytes {
         std::vector<uint8_t> connectedData;
         connectedData.reserve(dataLength);
 
-        for (int i = 0; i < splitData.size(); i++) {
+        for (int i = 0; i < splitData.size() - 1; i++) {
             connectedData.insert(connectedData.end(), splitData[i].begin(), splitData[i].end());
         }
+        connectedData.insert(connectedData.end(), splitData[splitData.size() - 1].begin(), splitData[splitData.size() - 1].begin() + dataLength - connectedData.size());
+
         return connectedData;
     }
 }

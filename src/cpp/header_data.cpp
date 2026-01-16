@@ -25,7 +25,7 @@ namespace HeaderData {
         std::vector<std::vector<uint8_t>> header = colourPix.PixelsToData(pixels, 0, errorCorrection->getBlockLen());
         std::vector<uint8_t> headerCorrected = errorCorrection->Decode(header[0]);
     
-        return ((int)headerCorrected[0] | ((int)headerCorrected[1]) << 8) + 2;
+        return ((int)headerCorrected[0] | ((int)headerCorrected[1]) << 8);
     }
 
 }

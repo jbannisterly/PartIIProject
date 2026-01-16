@@ -24,12 +24,10 @@ std::vector<uint8_t> ColourPixels::DataToPixels(std::vector<std::vector<uint8_t>
 
         Colour pixelColour = colourScheme.colours[pixelValue];
 
-        pixels.push_back(pixelColour.b);
-        pixels.push_back(pixelColour.g);
         pixels.push_back(pixelColour.r);
+        pixels.push_back(pixelColour.g);
+        pixels.push_back(pixelColour.b);
     }
-
-    std::cout << pixels.size() << std::endl;
 
     return pixels;
 }
@@ -37,8 +35,6 @@ std::vector<uint8_t> ColourPixels::DataToPixels(std::vector<std::vector<uint8_t>
 std::vector<uint8_t> ColourPixels::PixelsToColourIndex(std::vector<uint8_t> &pixels, int start, int end) {
     std::vector<uint8_t> indices;
     indices.reserve(end - start);
-
-    std::cout << start << " " << end << std::endl;
 
     for (int i = start; i < end; i++) {
         uint8_t index = 0;
@@ -61,8 +57,6 @@ std::vector<uint8_t> ColourPixels::ColoursToData(std::vector<uint8_t> &colourInd
     std::vector<uint8_t> data;
     data.reserve(end - start);
 
-    std::cout << "n bytes " << colourIndex.size() << std::endl;
-
     for (int i = start; i < end; i++) {
         uint8_t currentByte = 0;
         for (int j = 0; j < 8; j++) {
@@ -72,17 +66,12 @@ std::vector<uint8_t> ColourPixels::ColoursToData(std::vector<uint8_t> &colourInd
         data.push_back(currentByte);
     }
 
-    std::cout << data.size() << std::endl;
-
     return data;
 }
 
 std::vector<std::vector<uint8_t>> ColourPixels::PixelsToData(std::vector<uint8_t> &pixels, int startByte, int endByte) {
     int bitsPerPixel = log2(colourScheme.colours.size());
     
-    std::cout << "bpp " << bitsPerPixel << std::endl;
-    std::cout << "npixels " << pixels.size() << std::endl;
-
     std::vector<uint8_t> colourIndex = PixelsToColourIndex(pixels, startByte * 8, endByte * 8);
     std::vector<std::vector<uint8_t>> data;
 

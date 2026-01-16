@@ -39,9 +39,9 @@ int main(){
         SplitError splitError(errorCorrectors);
         std::vector<std::vector<uint8_t>> correctedSplitData = splitError.Decode(splitData);
 
-        std::vector connectedData = SplitBytes::Decode(correctedSplitData, compressedLen);
+        std::vector connectedData = SplitBytes::Decode(correctedSplitData, compressedLen / 3);
 
-        std::vector<uint8_t> decompressed = Compression::decompress(connectedData.data() + 2, compressedLen - 2); 
+        std::vector<uint8_t> decompressed = Compression::decompress(connectedData.data() + 2, compressedLen); 
 
         for (int i = 0; i < decompressed.size(); i++){
             std::cout << (char)decompressed[i];

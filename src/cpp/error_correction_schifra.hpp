@@ -60,7 +60,6 @@ class ErrorCorrection: public ErrorCorrectionVirtual {
             std::string blockDataOut;
             blockDataOut.resize(blockLen);
             block.data_to_string(blockDataOut);
-            std::cout << blockDataOut.size();
 
             for (int j = 0; j < blockLen; j++){
                 encodedData.push_back(block.data[j]);
