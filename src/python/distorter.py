@@ -46,4 +46,3 @@ for i in range(70):
 
 
 cv2.imwrite("output/img/output_distorted.png", np.uint8(np.clip(barcode_background, 0, 255/256) * 256))
-cv2.imwrite("output/img/test.png", np.uint8(mask))

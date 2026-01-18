@@ -13,6 +13,7 @@
 #include "finder_group.hpp"
 #include "finder_patterns.hpp"
 #include "pattern_valid.hpp"
+#include "bounding_box.hpp"
 
 using namespace cv;
 
@@ -137,100 +138,6 @@ std::array<FinderCandidate, 3> OrderCentres(std::vector<FinderCandidate> &centre
     return candidatesSorted;
 }
 
-#if METHOD_PATTERN_4 == 1
-void BoundingBoxMissingCorner(FinderCandidate* finders, Vec3* findersVec, Vec3* bounds){
-    bounds[3] = bounds[0] + bounds[2] - bounds[1];
-}
-#endif
-
-#if METHOD_PATTERN_4 == 2
-void BoundingBoxMissingCorner(std::array<FinderCandidate, 3> &finders, std::array<Vec3, 3>  &findersVec, std::array<Vec3, 4> &bounds){
-    const double MODULEOFFSET = 4.5;
-    Vec3 bottomLeftDir = ((findersVec[0] - findersVec[1]).Normalise() * finders[0].width * (MODULEOFFSET / 7)) + findersVec[0] - bounds[0];
-    Vec3 topRightDir = ((findersVec[2] - findersVec[1]).Normalise() * finders[2].width * (MODULEOFFSET / 7)) + findersVec[2] - bounds[2];
-
-    bounds[3] = Intersection(bottomLeftDir, topRightDir, bounds[0], bounds[2]);    
-}
-#endif
-
-#if METHOD_PATTERN_4 == 3
-void BoundingBoxMissingCorner(std::array<FinderCandidate, 3> &finders, std::array<Vec3, 3>  &findersVec, std::array<Vec3, 4> &bounds){
-    const double MODULEOFFSET = 4.5;
-    Vec3 bottomLeftDir = bounds[1] - bounds[2];
-    Vec3 topRightDir = bounds[1] - bounds[0];
-
-    bounds[3] = Intersection(bottomLeftDir, topRightDir, bounds[0], bounds[2]);    
-}
-#endif
-
-std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders){
-    const double MODULEOFFSET = 4.5;
-
-    std::array<Vec3, 3> findersVec;
-    std::array<Vec3, 4> bounds;
-    
-    for (int i = 0; i < 3; i++){
-        findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
-    }
-
-    bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[1] = findersVec[1] + (((findersVec[1] - findersVec[2]).Normalise() + 
-                (findersVec[1] - findersVec[0]).Normalise())
-                * finders[1].width) * (MODULEOFFSET / 7);
-    bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[0]).Normalise() * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
-
-    BoundingBoxMissingCorner(finders, findersVec, bounds);
-
-    return bounds;
-}
-
-std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders, FinderCandidate finder4){
-    const double MODULEOFFSET = 4;
-    const double MODULEOFFSET4 = 5;
-
-    std::array<Vec3, 4> findersVec;
-    std::array<Vec3, 4> bounds;
-    
-    for (int i = 0; i < 3; i++){
-        findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
-    }
-    findersVec[3] = Vec3(finder4.x, finder4.y, 0);
-
-    bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[2]).Normalise() * finders[0].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[1] = findersVec[1] + ((findersVec[1] - findersVec[3]).Normalise() * finders[1].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[0]).Normalise() * finders[2].width * sqrt(2) * (MODULEOFFSET / 7));
-    bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[1]).Normalise() * finders[3].width * sqrt(2) * (MODULEOFFSET / 7));
-
-    return bounds;
-}
-
-Mat Project(Mat input, std::array<int, 8> inputCoords, Position size){
-    Mat output;
-
-    const int cornerIndices[4] = {1, 2, 0, 3};
-
-    std::cout << "Start Coords" << std::endl;
-    Point2f startCoords[4];
-    for (int i = 0; i < 4; i++){
-        startCoords[i] = Point2f(inputCoords[cornerIndices[i] * 2], inputCoords[cornerIndices[i] * 2 + 1]);
-        std::cout << startCoords[i] << std::endl;
-    }
-
-    Point2f endCoords[4];
-    endCoords[0] = Point2f(0,0);
-    endCoords[1] = Point2f(size.x - 1, 0);
-    endCoords[2] = Point2f(0, size.y - 1);
-    endCoords[3] = Point2f(size.x - 1, size.y - 1);
-
-    Mat transform = getPerspectiveTransform(startCoords, endCoords);
-
-    std::cout << transform << std::endl;
-
-    warpPerspective(input.clone(), output, transform, Size(size.x, size.y));
-
-    return output;
-}
-
 int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     double centreDistanceH = (centres[1] - centres[2]).Magnitude();
     double boundsDistanceH = (bounds[1] - bounds[2]).Magnitude();
@@ -315,7 +222,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     
     std::cout << "centres" << std::endl;
 
-    std::array<Vec3, 4> bounds = BoundingBox(centresOrdered, centres4[0]);
+    std::array<Vec3, 4> bounds = BoundingBox::BoundingBox(centresOrdered, centres4[0]);
 
     for (int i = 0; i < bounds.size(); i++) {
         debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
@@ -346,7 +253,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 
     std::cout << "Estimated size" << std::endl;
 
-    outputImage = Project(inputImage, projectCoordsAdjusted, Position(projectionSize, projectionSize)); 
+    outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(projectionSize, projectionSize)); 
 
     std::cout << "Projected image" << std::endl;
 
