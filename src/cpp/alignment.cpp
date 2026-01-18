@@ -257,12 +257,11 @@ int main(){
     std::string filePathOut = "output/img/output_align_";
     std::string filePath = "output/img/output_distorted.png";
     std::string filePathOutFinal = "output/img/output_align.png";
-    const int ITERATIONS = 5;
 
     Mat image = imread(filePath);
     Mat nextImage;
 
-    for (int i = 0; i < ITERATIONS; i++){
+    for (int i = 0; i < ALIGNMENT_ITERATIONS; i++){
         nextImage = AlignImage(image.clone(), image.rows, 100, filePathDebug + std::to_string(i) +  ".png");
         imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
         image = nextImage;
