@@ -8,40 +8,13 @@
 #include "profiling.hpp"
 #include <functional>
 #include "image_aux.hpp"
+#include "image_processing.hpp"
+#include "image_debug.hpp"
+#include "finder_group.hpp"
+#include "finder_patterns.hpp"
+#include "pattern_valid.hpp"
 
 using namespace cv;
-
-std::vector<uint8_t> Debug;
-
-struct Position{
-    double x;
-    double y;
-
-    Position(double inX, double inY){
-        x = inX;
-        y = inY;
-    }
-};
-
-void DebugCross(int x, int y, int width, int crossSize, int colour = 255) {
-    for (int i = -crossSize; i < crossSize; i++) {
-        Debug[x + y * width + i] = colour;
-        Debug[x + (y + i) * width] = colour;
-    }
-}
-
-std::vector<double> Greyscale(std::vector<uint8_t> &image, int pixels){
-    std::vector<double> grey;
-    std::cout << "pixels is " << pixels << std::endl;
-    std::cout << "image size is " << image.size() << std::endl;
-    grey.reserve(pixels);;
-
-    for (int i = 0; i < pixels; i++){
-        grey.push_back((77 * image[i * 3] + 151 * image[i * 3 + 1] + 28 * image[i * 3 + 2]) / 256);
-    }
-
-    return grey;
-}
 
 int GetIndexPadding(int nY, int nX, int y, int x){
     int yy = y > 0 ? (y < nY ? y : nY - 1) : 0;
@@ -49,349 +22,8 @@ int GetIndexPadding(int nY, int nX, int y, int x){
     return yy * nX + xx;
 }
 
-std::vector<double> GetBlurred(std::vector<double> &imageData, int nY, int nX){
-    Mat data = Mat(nY, nX, CV_64F, imageData.data());
-    Mat blurred = Mat(nY, nX, CV_64F);
 
-    std::cout << "pre box filter" << std::endl;
 
-    boxFilter(data, blurred, -1, Size(WINDOW_SIZE * 2 + 1, WINDOW_SIZE * 2 + 1), Point(-1, -1), true, CV_HAL_BORDER_REPLICATE);
-
-    std::cout << "post box filter" << std::endl;
-
-    std::vector<double> blurredVec((double*)blurred.ptr(), (double*)blurred.ptr() + imageData.size());
-
-    return blurredVec;
-}
-
-std::vector<uint8_t> Threshold(std::vector<double> &image, int nY, int nX){
-    Timer t = Timer();
-    t.StartTimer();
-
-    std::vector<uint8_t> threshold;
-    threshold.reserve(nY * nX);
-    const double WINDOW_SCALE = (2 * WINDOW_SIZE + 1) * (2 * WINDOW_SIZE + 1);
-    
-#if BLUR_FORMULA == 1
-    std::vector<double> blurred = GetBlurred(image, nY, nX);
-#endif
-
-    std::cout << "did blur" << std::endl;
-
-    for (int yy = 0; yy < nY; yy++){
-#if BLUR_FORMULA == 0
-        double m = 0;
-        for (int xi = -WINDOW_SIZE; xi <= WINDOW_SIZE; xi++){
-            for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
-                m += image[GetIndexPadding(nY, nX, yy + yi, xi - 1)] / WINDOW_SCALE;
-            }
-        }
-#endif
-        for (int xx = 0; xx < nX; xx++){
-#if BLUR_FORMULA == 0
-            for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
-                m += image[GetIndexPadding(nY, nX, yy + yi, xx + WINDOW_SIZE)] / WINDOW_SCALE;
-                m -= image[GetIndexPadding(nY, nX, yy + yi, xx - WINDOW_SIZE)] / WINDOW_SCALE;
-            }
-#endif
-            if (image[yy * nX + xx] > 180){
-                threshold.push_back(255);
-            }else{
-#if BLUR_FORMULA == 0
-                if(image[yy * nX + xx] * 1.1 >= m - 10){
-#endif
-#if BLUR_FORMULA == 1
-                if(image[yy * nX + xx] * 1.1 >= blurred[yy * nX + xx] - 10){
-#endif
-                    threshold.push_back(255);
-                }else{
-                    threshold.push_back(0);
-                }
-            }
-        }
-    }
-
-    std::cout << t.GetElapsed() << std::endl;
-
-    return threshold;
-}
-
-int CountSame(std::vector<uint8_t> &data, int index, int size){
-    int i = 0; 
-    uint8_t value = data[index];
-
-    while(index + i < size && data[index + i] == value){
-        i++;
-    }
-
-    // std::cout << "Same " << i << " value " << std::to_string(value) << std::endl;
-
-    return i;
-}
-
-struct FinderCandidate{
-    double y = 0;
-    double x = 0;
-    double width = 0;
-
-    FinderCandidate() {}
-
-    FinderCandidate(double initY, double initX, double initW) :
-    y { initY },
-    x { initX },
-    width { initW }
-    {}
-
-    void Debug() {
-        // std::cout << x << " " << y << " " << width << std::endl;
-    }
-
-};
-
-bool PatternValid_QR(std::vector<int> w){
-    int avg = 0;
-    for (int i = 0; i < 5; i++){
-        avg += w[i] / 7;
-    }
-
-    for (int i = 0; i < 5; i++){
-        if (i == 2){
-            if (w[i] > 3 * avg + TOLERANCE_PIXELS) return false; // tolerance is 10x more than paper
-            if (w[i] < 3 * avg - TOLERANCE_PIXELS) return false;
-            if (w[2] < w[0] + w[1]) return false;
-            if (w[2] < w[3] + w[4]) return false;
-        }else{
-            if (w[i] > avg + TOLERANCE_PIXELS) return false;
-            if (w[i] < avg - TOLERANCE_PIXELS * 0.75) return false;
-        }
-    }
-
-    return true;
-}
-
-bool PatternValid_QR_4(std::vector<int> w){
-    const int TOLERANCE = 20;
-
-    int avg = 0;
-    for (int i = 0; i < 3; i++){
-        avg += w[i] / 5;
-    }
-
-    for (int i = 0; i < 3; i++){
-        if (i == 1){
-            if (w[i] > 3 * avg + TOLERANCE) return false; // tolerance is 10x more than paper
-            if (w[i] < 3 * avg - TOLERANCE) return false;
-            if (w[1] < w[0] + w[2]) return false;
-        }else{
-            if (w[i] > avg + TOLERANCE) return false;
-            if (w[i] < avg - TOLERANCE * 0.75) return false;
-        }
-    }
-
-    return true;
-}
-
-std::vector<FinderCandidate> FinderPatterns(int patternSize, std::vector<uint8_t> &data, int sizeY, int sizeX, std::function<bool (std::vector<int>)> patternValid, bool firstWhite = true){    
-    // std::cout << "First White " << firstWhite << " Pattern Size " << patternSize << std::endl;
-    int index = 0;
-    std::vector<int> w;
-    w.resize(patternSize);
-    int wIndex = 0;
-    int size = sizeX * sizeY;
-    std::vector<FinderCandidate> finder;
-    
-    for (int i = 0; i < patternSize; i++){
-        w[i] = CountSame(data, wIndex, size);
-        wIndex += w[i];
-    }
-
-    while(wIndex < size){
-        double width = 0;
-        for (int i = 0; i < patternSize; i++) {
-            width += w[i];
-        }
-        bool valid = patternValid(w);
-        if(valid && width > 0 && (
-            (firstWhite && data[wIndex] < 255) ||
-            (!firstWhite && data[wIndex] > 100)
-            )
-        ){
-            double centre = wIndex;
-            for (int j = 0; j < patternSize; j++){
-                centre -= w[j] / 2;
-            }
-            // if (patternSize == 3 && width > 20) {
-            //     std::cout << "Found pattern ";
-            //     for (int j = 0; j < patternSize; j++){
-            //         std::cout << w[j] << " ";
-            //     }
-            //     std::cout << "at " << centre - int(centre / sizeX) * sizeX << "," << int(centre / sizeX) << std::endl;
-            // }
-
-            finder.push_back(FinderCandidate(centre / sizeX, centre - int(centre / sizeX) * sizeX, width));
-        }
-
-        // Read another
-        for (int i = 0; i < patternSize - 1; i++){
-            w[i] = w[i + 1];
-        }
-        for (int i = patternSize - 1; i < patternSize; i++){
-            w[i] = CountSame(data, wIndex, size);
-            wIndex += w[i];
-        }
-    }
-
-    return finder;
-} 
-
-struct VerticalData{
-    std::vector<uint8_t> data;
-    int height;
-    int width;
-};
-
-class FinderGroup{
-    public:
-    FinderCandidate Centre();
-    FinderCandidate CentreRefined();
-
-    private:
-    std::vector<FinderCandidate> candidates;
-    std::vector<FinderCandidate> verticalCandidates;
-
-    Position* VerticalOffset(){
-        FinderCandidate centre = Centre();
-        double startX = centre.x - centre.width * 1.3 / 7;
-        double startY = centre.y - centre.width * 5.5 / 7;
-        if (startX < 0) startX = 0;
-        if (startY < 0) startY = 0;
-
-        Position* offset = new Position(startX, startY);
-
-        return offset;
-    }
-
-    // Get rectangle around candidates to check for finder pattern
-    VerticalData VerticalSample(std::vector<uint8_t> data, int dataX, int dataY){
-        FinderCandidate centre = Centre();
-        Position* offset = VerticalOffset();
-        int startX = offset->x;
-        int startY = offset->y;
-
-        VerticalData sample;
-        
-        sample.height = centre.width * 11 / 7;
-        sample.width = centre.width * 2.6 / 7;
-
-        if (sample.height + startY > dataY) sample.height = dataY - startY;
-
-        sample.data = std::vector<uint8_t>();
-        sample.data.reserve(sample.height * sample.width);
-
-        for (int xx = startX; xx < startX + sample.width; xx++){
-            for (int yy = startY; yy < startY + sample.height; yy++){
-                // std::cout << xx << " " << yy << std::endl;
-                sample.data.push_back(data[yy * dataX + xx]);
-            }
-        }
-
-        return sample;
-    }
-
-    std::vector<FinderCandidate> FinderPatternVertical(int patternSize, VerticalData vertical, std::function<bool (std::vector<int>)> patternValid, bool firstWhite){
-        Position* startPosition = VerticalOffset();
-        std::vector<FinderCandidate> verticalCandidates = FinderPatterns(patternSize, vertical.data, vertical.width, vertical.height, patternValid, firstWhite);
-
-        for (int i = 0; i < verticalCandidates.size(); i++){
-            double temp;
-            temp = verticalCandidates[i].x;
-            verticalCandidates[i].x = verticalCandidates[i].y + startPosition->x;
-            verticalCandidates[i].y = temp + startPosition->y;
-        }
-
-        free(startPosition);
-
-        return verticalCandidates;
-    }
-
-    public:
-    bool TryAddCandidate(FinderCandidate toAdd){
-        if (candidates.size() == 0){
-            candidates.push_back(toAdd);
-            return true;
-        }
-
-        if (toAdd.width > candidates[0].width + TOLERANCE_PIXELS) return false;
-        if (toAdd.width < candidates[0].width - TOLERANCE_PIXELS) return false;
-        if (toAdd.x > candidates[0].x + 30) return false;
-        if (toAdd.x < candidates[0].x - 30) return false;
-        if (toAdd.y > candidates[0].y + candidates[0].width * 3 / 7) return false;
-        if (toAdd.y < candidates[0].y - candidates[0].width * 3 / 7) return false;
-
-        candidates.push_back(toAdd);
-        return true;
-    }
-
-    bool isValid(std::vector<uint8_t> threshold, int dataX, int dataY, int patternSize, std::function<bool (std::vector<int>)> patternValid, bool firstWhite){
-        VerticalData vertical = VerticalSample(threshold, dataX, dataY);
-
-        if (vertical.data.size() == 0) return false;
-        verticalCandidates = FinderPatternVertical(patternSize, vertical, patternValid, firstWhite);
-
-        bool verticalFound = verticalCandidates.size() > 0;
-
-        return verticalFound;
-    }
-
-    int size(){
-        return candidates.size();
-    }
-};
-
-FinderCandidate FinderGroup::Centre(){
-    FinderCandidate centre(0,0,0);
-
-    for (int i = 0; i < candidates.size(); i++){
-        centre.x += candidates[i].x;
-        centre.y += candidates[i].y;
-        centre.width += candidates[i].width;
-    }
-
-    centre.x /= candidates.size();
-    centre.y /= candidates.size();
-    centre.width /= candidates.size();
-
-    return centre;
-}
-
-FinderCandidate FinderGroup::CentreRefined(){
-    FinderCandidate centre = Centre();
-
-    if (verticalCandidates.size() > 0){
-        int nValidCandidates = 0;
-
-        std::cout << "would have been " << centre.y << std::endl;
-
-        centre.y = 0;
-        for (int i = 0; i < verticalCandidates.size(); i++){
-            if (verticalCandidates[i].width > 0){
-                nValidCandidates++;
-                centre.y += verticalCandidates[i].y;
-                // std::cout << verticalCandidates[i].width << std::endl;
-            }
-        }
-        if (nValidCandidates > 0){
-            centre.y /= nValidCandidates;
-        }else{
-            return Centre();
-        }
-
-        std::cout << "vertical gives " << centre.y << std::endl;
-        std::cout << "using " << nValidCandidates << " samples" << std::endl;
-    }
-
-    return centre;
-}
 
 std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> &candidates){
     std::vector<FinderGroup> finderGroup;
@@ -416,20 +48,14 @@ std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> &candidates){
     return finderGroup;
 }
 
-std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> &data){
+std::vector<uint8_t> Uint8ToPixels(std::vector<uint8_t> &greyscale){
     std::vector<uint8_t> pixels;
-    pixels.reserve(data.size() * 3);
+    pixels.reserve(greyscale.size() * 3);
 
-    for (int i = 0; i < data.size(); i++){
-        if (Debug[i] == 0){
-            pixels[i * 3] = data[i];
-            pixels[i * 3 + 1] = data[i];
-            pixels[i * 3 + 2] = data[i];
-        }else{
-            pixels[i * 3 + 2] = Debug[i];
-            pixels[i * 3 + 1] = 0;
-            pixels[i * 3 + 0] = (Debug[i] % 2) * 255;
-        }
+    for (int i = 0; i < greyscale.size(); i++){
+        pixels[i * 3] = greyscale[i];
+        pixels[i * 3 + 1] = greyscale[i];
+        pixels[i * 3 + 2] = greyscale[i];
     }
 
     return pixels;
@@ -621,25 +247,16 @@ int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     return int((sizeEstimateH + sizeEstimateV) / 2);
 }
 
-std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, FinderCandidate estimatedCentre) {
-    std::vector<FinderCandidate> finder = FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
+std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, FinderCandidate estimatedCentre, DebugImage debugImage) {
+    std::vector<FinderCandidate> finder = FinderPatterns::FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
 
     if (patternSize == 3) {
         for (int i = 0; i < finder.size(); i++) {
-            for (int j = -finder[i].width / 2; j < finder[i].width; j++) {
-                Debug[int(finder[i].x) + int(finder[i].y) * inputImage.cols + j] = 55;
-            }
+            debugImage.DebugCentre(finder[i]);
         }
     }
 
-    // exit(-1);
-
-    std::cout << "Finder Size " << finder.size() << std::endl;
-
     std::vector<FinderGroup> finderGroups = GroupFinders(finder);
-
-    std::cout << "Finder Groups Size " << finderGroups.size() << std::endl;
-
     std::vector<int> finderGroupsValidIndex;
 
     for (int i = 0; i < finderGroups.size(); i++){
@@ -648,8 +265,6 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
             finderGroupsValidIndex.push_back(i);
         }
     }
-
-    std::cout << "Valid Finder Group Size " << finderGroupsValidIndex.size() << std::endl;
 
     int quality[finderGroups.size()];
 
@@ -665,38 +280,19 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
     std::sort(finderGroupsValidIndex.begin(), finderGroupsValidIndex.end(), [&quality](int a, int b){
         return quality[a] > quality[b];
     });
-
-    std::cout << "sorted" << std::endl;
-    std::cout << "Finder Groups Valid Index Order" << std::endl;
-
-    // for (int i = 0; i < finderGroupsValidIndex.size(); i++){
-    //     std::cout << finderGroups[finderGroupsValidIndex[i]].size() << std::endl;
-    // }
-
     std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValidIndex);
-
-    if (patternSize == 3) {
-        std::cout << "pattern is 3" << std::endl;
-        std::cout << "centres size " << centres.size() << std::endl;
-        for (int i = 0; i < centres.size(); i++) {
-            // DebugCross(int(centres[i].x), int(centres[i].y), inputImage.cols, centres[i].width / 2);
-        }
-    }
-
-    std::cout << "Centre count " << centres.size() << std::endl;
 
     return centres;
 }
 
 Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::string debugPath = ""){
-    int nPixels = inputImage.cols * inputImage.rows; 
-    Debug.reserve(nPixels);
-    for(int i = 0; i < nPixels; i++) Debug[i] = 0;
+    int nPixels = inputImage.cols * inputImage.rows;
+    DebugImage debug(inputImage.cols, inputImage.rows);
 
     std::vector<uint8_t> data = ImageAux::MatToBytes(inputImage);
 
-    std::vector<double> grey = Greyscale(data, nPixels);
-    std::vector<uint8_t> threshold = Threshold(grey, inputImage.rows, inputImage.cols);
+    std::vector<double> grey = ImageProcessing::Greyscale(data, nPixels);
+    std::vector<uint8_t> threshold = ImageProcessing::Threshold(grey, inputImage.rows, inputImage.cols);
 
 
     Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
@@ -707,23 +303,22 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 
     std::cout << "Threshold" << std::endl;
 
-    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, false, FinderCandidate(.5, .5, 0));
-    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid_QR, true, FinderCandidate(1., 1., 0.));
+    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, FinderCandidate(.5, .5, 0), debug);
+    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, FinderCandidate(1., 1., 0.), debug);
 
     std::array<FinderCandidate, 3> centresOrdered = OrderCentres(centres);
 
     for (int i = 0; i < centresOrdered.size(); i++) {
-        DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
-        std::cout << "IMPORTANT DEBUG " << centresOrdered[i].x << " " << centresOrdered[i].y << std::endl;
+        debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
     }
-    DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
+    debug.DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
     
     std::cout << "centres" << std::endl;
 
     std::array<Vec3, 4> bounds = BoundingBox(centresOrdered, centres4[0]);
 
     for (int i = 0; i < bounds.size(); i++) {
-        DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, 254);
+        debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
     }
 
     std::vector<uint8_t> pixels = Uint8ToPixels(threshold);
