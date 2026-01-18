@@ -5,6 +5,14 @@
 using namespace cv;
 
 namespace ImageProcessing {
+
+    int GetIndexPadding(int nY, int nX, int y, int x){
+        int yy = y > 0 ? (y < nY ? y : nY - 1) : 0;
+        int xx = x > 0 ? (x < nX ? x : nX - 1) : 0;
+        return yy * nX + xx;
+    }
+
+
     std::vector<double> Greyscale(std::vector<uint8_t> &image, int pixels){
         std::vector<double> grey;
         std::cout << "pixels is " << pixels << std::endl;
@@ -51,7 +59,8 @@ namespace ImageProcessing {
                 for (int yi = -WINDOW_SIZE; yi <= WINDOW_SIZE; yi++){
                     m += image[GetIndexPadding(nY, nX, yy + yi, xi - 1)] / WINDOW_SCALE;
                 }
-            }
+            }}
+
 #endif
             for (int xx = 0; xx < nX; xx++){
 #if BLUR_FORMULA == 0
@@ -79,6 +88,4 @@ namespace ImageProcessing {
 
         return threshold;
     }
-
 }
-

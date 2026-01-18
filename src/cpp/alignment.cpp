@@ -17,15 +17,6 @@
 
 using namespace cv;
 
-int GetIndexPadding(int nY, int nX, int y, int x){
-    int yy = y > 0 ? (y < nY ? y : nY - 1) : 0;
-    int xx = x > 0 ? (x < nX ? x : nX - 1) : 0;
-    return yy * nX + xx;
-}
-
-
-
-
 std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> &candidates){
     std::vector<FinderGroup> finderGroup;
 
@@ -249,9 +240,8 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
         projectCoordsAdjusted[i] = projectCoords[i] + pixelOffsetExpand * adjustmentDirection[i];
     }
 
-    EstimateBarcodeSize(bounds, centresVec);
 
-    std::cout << "Estimated size" << std::endl;
+    std::cout << "Estimated size\n" << EstimateBarcodeSize(bounds, centresVec) << std::endl;
 
     outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(projectionSize, projectionSize)); 
 
