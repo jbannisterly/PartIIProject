@@ -247,11 +247,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 
     std::cout << "Projected image" << std::endl;
 
-    Mat debugImage(inputImage.rows, inputImage.cols, CV_8UC3, pixels.data());
-    
-    if (debugPath != "") {
-        imwrite(debugPath, debugImage);
-    }
+    debug.WriteImage(debugPath, data);
 
     return outputImage;
 }
