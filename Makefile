@@ -60,3 +60,8 @@ demo:
 	python src/python/distorter.py
 	./output/bin/Alignment
 	./output/bin/Decoder
+
+c_encoder:
+	make -C output/build/ Encoder
+	mv ./output/build/src/cpp/Encoder ./output/bin/Encoder
+	./output/bin/Encoder
