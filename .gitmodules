@@ -1,0 +1,6 @@
+[submodule "schifra"]
+	path = schifra
+	url = https://github.com/jbannisterly/schifra.git
+[submodule "libs/schifra"]
+	path = libs/schifra
+	url = https://github.com/jbannisterly/schifra.git
