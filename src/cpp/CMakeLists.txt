@@ -18,14 +18,14 @@ add_executable(Alignment
     "alignment.cpp"
 )
 
-target_link_libraries(Encoder PRIVATE lib)
-target_link_libraries(Decoder PRIVATE lib)
+target_link_libraries(Encoder PRIVATE lib schifra)
+target_link_libraries(Decoder PRIVATE lib schifra)
 target_link_libraries(Alignment PRIVATE alignment_lib)
 
 target_link_libraries(
     lib PUBLIC
     PkgConfig::PKG_ZLIB
-    ${OpenCV_LIBRARIES}
+    ${OpenCV_LIBRARIES} PRIVATE
     schifra
 )
 
