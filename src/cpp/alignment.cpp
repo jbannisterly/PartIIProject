@@ -145,7 +145,7 @@ int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     return int((sizeEstimateH + sizeEstimateV) / 2);
 }
 
-std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, FinderCandidate estimatedCentre, DebugImage debugImage) {
+std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre, DebugImage debugImage) {
     std::vector<FinderCandidate> finder = FinderPatterns::FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
 
     if (patternSize == 3) {
@@ -169,10 +169,16 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
     for (int i = 0; i < finderGroups.size(); i++){
         int qualNX = finderGroups[i].size();
         int qualWidth = finderGroups[i].Centre().width;
-        double distance = 
-                pow((finderGroups[i].Centre().x / inputImage.cols - estimatedCentre.x), 2)
-            +   pow((finderGroups[i].Centre().y / inputImage.rows - estimatedCentre.y), 2);
-        quality[i] = qualNX * qualWidth * (1 - distance);
+        double bestDistance = 100;
+        for (int j = 0; j < estimatedCentre.size(); j++) {
+            double distance = 
+                pow((finderGroups[i].Centre().x / inputImage.cols - estimatedCentre[j].x), 2)
+            +   pow((finderGroups[i].Centre().y / inputImage.rows - estimatedCentre[j].y), 2);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+            }
+        }
+        quality[i] = qualNX * qualWidth * (1 - bestDistance);
     }
 
     std::sort(finderGroupsValidIndex.begin(), finderGroupsValidIndex.end(), [&quality](int a, int b){
@@ -201,8 +207,8 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 
     std::cout << "Threshold" << std::endl;
 
-    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, FinderCandidate(.5, .5, 0), debug);
-    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, FinderCandidate(1., 1., 0.), debug);
+    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0), FinderCandidate(1, 0, 0), FinderCandidate(0, 1, 0)}, debug);
+    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)}, debug);
 
     std::array<FinderCandidate, 3> centresOrdered = OrderCentres(centres);
 
