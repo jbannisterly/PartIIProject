@@ -62,10 +62,10 @@ BarcodeLayout GetBarcode4Detailed() {
 }
 
 int GetCapacity(BarcodeLayout barcode) {
-    int capacity;
+    int capacity = 0;
 
     for (int i = 0; i < barcode.mask.size(); i++) {
-        if (barcode.mask[i] == 0) {
+        if (barcode.mask[i] > 0) {
             capacity++;
         }
     }
