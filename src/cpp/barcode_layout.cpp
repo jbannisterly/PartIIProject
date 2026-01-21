@@ -60,3 +60,15 @@ BarcodeLayout GetBarcode4Detailed() {
 
     return barcode;
 }
+
+int GetCapacity(BarcodeLayout barcode) {
+    int capacity;
+
+    for (int i = 0; i < barcode.mask.size(); i++) {
+        if (barcode.mask[i] == 0) {
+            capacity++;
+        }
+    }
+
+    return capacity;
+}
