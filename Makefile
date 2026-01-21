@@ -65,3 +65,7 @@ c_encoder:
 	make -C output/build/ Encoder
 	mv ./output/build/src/cpp/Encoder ./output/bin/Encoder
 	./output/bin/Encoder
+
+rnd:
+	g++ -g -o ./output/bin/Rnd src/cpp/random_data_gen.cpp
+	./output/bin/Rnd
