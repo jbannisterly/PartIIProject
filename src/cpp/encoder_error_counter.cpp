@@ -20,12 +20,12 @@ using namespace cv;
 
 int main(){
     BarcodeLayout layout = GetBarcode4Detailed();
-    ColourPixels colourPix = ColourPalletes::Bit_3();
+    ColourPixels colourPix(4);
     int barcodeCapacity = GetCapacity(layout) / 8;
 
     std::cout << barcodeCapacity << std::endl;
 
-    std::vector<std::vector<uint8_t>> splitData = RandomDataGen::GenerateRandomData(100, barcodeCapacity, 3);
+    std::vector<std::vector<uint8_t>> splitData = RandomDataGen::GenerateRandomData(100, barcodeCapacity, 12);
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(splitData);
 
     BarcodeWriter writer(layout);

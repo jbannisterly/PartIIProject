@@ -4,10 +4,16 @@
 #include <cstdint>
 #include <cmath>
 
+enum ColourRules{
+    COLOUR_SCHEME, BIT_DEPTH
+};
+
 struct Colour {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+    uint8_t r = 0;
+    uint8_t g = 0;
+    uint8_t b = 0;
+
+    Colour() {}
 
     Colour(uint8_t inR, uint8_t inG, uint8_t inB) :
     r {inR} ,
@@ -30,11 +36,14 @@ struct ColourScheme {
 
     ColourScheme(std::vector<Colour> &inColours) :
     colours {inColours} { }
+    ColourScheme() {}
 };
 
 class ColourPixels {
     private:
 
+    ColourRules rule;
+    int bitDepth;
     ColourScheme colourScheme;
     std::vector<uint8_t> PixelsToColourIndex(std::vector<uint8_t> &pixels, int start, int end);
     std::vector<uint8_t> ColoursToData(std::vector<uint8_t> &colourIndex, int splitIndex, int start, int end);
@@ -45,5 +54,8 @@ class ColourPixels {
     std::vector<std::vector<uint8_t>> PixelsToData(std::vector<uint8_t> &pixels, int start, int end);
 
     ColourPixels (ColourScheme inColourScheme) :
-    colourScheme {inColourScheme} { }
+    colourScheme {inColourScheme} { rule = ColourRules::COLOUR_SCHEME; }
+
+    ColourPixels (int inBitDepth) :
+    bitDepth {inBitDepth} { rule = ColourRules::BIT_DEPTH; }
 };
