@@ -189,7 +189,7 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
     return centres;
 }
 
-Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, int pixelOffsetExpand, std::string debugPath = ""){
+Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath = ""){
     int nPixels = inputImage.cols * inputImage.rows;
     DebugImage debug(inputImage.cols, inputImage.rows);
 
@@ -219,7 +219,7 @@ Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, int pi
     
     std::cout << "centres" << std::endl;
 
-    std::array<Vec3, 4> bounds = BoundingBox::BoundingBox(centresOrdered, centres4[0]);
+    std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres4[0]);
 
     for (int i = 0; i < bounds.size(); i++) {
         debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
@@ -240,12 +240,12 @@ Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, int pi
         centresVec[i] = Vec3(centresOrdered[i].x, centresOrdered[i].y, 0);
     }
 
-    const int adjustmentDirection[8] = {-1, 1, -1, -1, 1, -1, 1, 1};
+    std::array<Vec3, 4> expandedCoords = BoundingBox::ExpansionBox(bounds, fractionExpand);
     std::array<int, 8> projectCoordsAdjusted;
-    for (int i = 0; i < 8; i++){
-        projectCoordsAdjusted[i] = projectCoords[i] + pixelOffsetExpand * adjustmentDirection[i];
+    for (int i = 0; i < 4; i++) {
+        projectCoordsAdjusted[i * 2 + 0] = expandedCoords[i].x;
+        projectCoordsAdjusted[i * 2 + 1] = expandedCoords[i].y;
     }
-
 
     std::cout << "Estimated size\n" << EstimateBarcodeSize(bounds, centresVec) << std::endl;
 
@@ -253,7 +253,7 @@ Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, int pi
 
     std::cout << "Projected image" << std::endl;
 
-    debug.WriteImage(debugPath, debugBackground);
+    // debug.WriteImage(debugPath, debugBackground);
 
     return outputImage;
 }
@@ -268,7 +268,7 @@ int main(){
     Mat nextImage;
 
     for (int i = 0; i < ALIGNMENT_ITERATIONS; i++){
-        nextImage = AlignImage(image.clone(), BARCODE_HEIGHT * 16, BARCODE_WIDTH * 16, 100, filePathDebug + std::to_string(i) +  ".png");
+        nextImage = AlignImage(image.clone(), BARCODE_HEIGHT * 16, BARCODE_WIDTH * 16, 0.1, filePathDebug + std::to_string(i) +  ".png");
         imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
         image = nextImage;
     }
