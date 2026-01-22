@@ -1,6 +1,7 @@
 #include "colours.hpp"
 #include <iostream>
 #include <math.h>
+#include <array>
 
 // bit layout is 76543210
 int GetBit(std::vector<uint8_t> &data, int bitNo) {
@@ -34,9 +35,9 @@ std::vector<uint8_t> ColourPixels::DataToPixels(std::vector<std::vector<uint8_t>
                     pixelColour.g |= ((pixelValue >> (i * 3 + 1)) & 1) << (i);
                     pixelColour.b |= ((pixelValue >> (i * 3 + 2)) & 1) << (i);
                 }
-                pixelColour.r = pixelColour.r * 255 / ((1 << bitDepth) - 1);
-                pixelColour.g = pixelColour.g * 255 / ((1 << bitDepth) - 1);
-                pixelColour.b = pixelColour.b * 255 / ((1 << bitDepth) - 1);
+                pixelColour.r = pixelColour.r * (double)255 / ((1 << bitDepth) - 1);
+                pixelColour.g = pixelColour.g * (double)255 / ((1 << bitDepth) - 1);
+                pixelColour.b = pixelColour.b * (double)255 / ((1 << bitDepth) - 1);
                 break;
         }
     
@@ -48,8 +49,8 @@ std::vector<uint8_t> ColourPixels::DataToPixels(std::vector<std::vector<uint8_t>
     return pixels;
 }
 
-std::vector<uint8_t> ColourPixels::PixelsToColourIndex(std::vector<uint8_t> &pixels, int start, int end) {
-    std::vector<uint8_t> indices;
+std::vector<uint> ColourPixels::PixelsToColourIndexColourScheme(std::vector<uint8_t> &pixels, int start, int end) {
+    std::vector<uint> indices;
     indices.reserve(end - start);
 
     for (int i = start; i < end; i++) {
@@ -69,7 +70,29 @@ std::vector<uint8_t> ColourPixels::PixelsToColourIndex(std::vector<uint8_t> &pix
     return indices;
 }
 
-std::vector<uint8_t> ColourPixels::ColoursToData(std::vector<uint8_t> &colourIndex, int splitIndex, int start, int end) {
+std::vector<uint> ColourPixels::PixelsToColourIndexBitDepth(std::vector<uint8_t> &pixels, int start, int end) {
+    std::vector<uint> indices;
+    int nColours = 1 << bitDepth; 
+    indices.reserve(end - start);
+
+    for (int i = start; i < end; i++) {
+        uint index = 0;
+        std::array<uint, 3> nearestData;
+        for (int j = 0; j < 3; j++) {
+            nearestData[j] = round(pixels[i * 3 + j] / ((double)255 / (nColours - 1)));
+        }
+        for (int j = 0; j < bitDepth; j++) {
+            for (int k = 0; k < 3; k++) {
+                index |= ((nearestData[k] >> j) & 1) << (j * 3 + k);
+            }
+        }
+        indices.push_back(index);
+    }
+
+    return indices;
+}
+
+std::vector<uint8_t> ColourPixels::ColoursToData(std::vector<uint> &colourIndex, int splitIndex, int start, int end) {
     std::vector<uint8_t> data;
     data.reserve(end - start);
 
@@ -86,9 +109,19 @@ std::vector<uint8_t> ColourPixels::ColoursToData(std::vector<uint8_t> &colourInd
 }
 
 std::vector<std::vector<uint8_t>> ColourPixels::PixelsToData(std::vector<uint8_t> &pixels, int startByte, int endByte) {
-    int bitsPerPixel = log2(colourScheme.colours.size());
+    int bitsPerPixel;
     
-    std::vector<uint8_t> colourIndex = PixelsToColourIndex(pixels, startByte * 8, endByte * 8);
+    std::vector<uint> colourIndex;
+    switch (rule) {
+        case ColourRules::BIT_DEPTH:
+            bitsPerPixel = bitDepth * 3;
+            colourIndex = PixelsToColourIndexBitDepth(pixels, startByte * 8, endByte * 8);
+            break;
+        case ColourRules::COLOUR_SCHEME:
+            bitsPerPixel = log2(colourScheme.colours.size());
+            colourIndex = PixelsToColourIndexColourScheme(pixels, startByte * 8, endByte * 8);
+            break;
+    }
     std::vector<std::vector<uint8_t>> data;
 
     for (int i = 0; i < bitsPerPixel; i++) {

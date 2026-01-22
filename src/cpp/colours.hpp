@@ -45,8 +45,9 @@ class ColourPixels {
     ColourRules rule;
     int bitDepth;
     ColourScheme colourScheme;
-    std::vector<uint8_t> PixelsToColourIndex(std::vector<uint8_t> &pixels, int start, int end);
-    std::vector<uint8_t> ColoursToData(std::vector<uint8_t> &colourIndex, int splitIndex, int start, int end);
+    std::vector<uint> PixelsToColourIndexColourScheme(std::vector<uint8_t> &pixels, int start, int end);
+    std::vector<uint> PixelsToColourIndexBitDepth(std::vector<uint8_t> &pixels, int start, int end);
+    std::vector<uint8_t> ColoursToData(std::vector<uint> &colourIndex, int splitIndex, int start, int end);
 
     public:
 

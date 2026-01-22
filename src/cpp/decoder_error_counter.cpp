@@ -42,13 +42,13 @@ int main(){
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-    BarcodeWriter writer(GetBarcode4Detailed());
+    BarcodeWriter writer(layout);
     std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
-    ColourPixels colourPix = ColourPalletes::Bit_3();
+    ColourPixels colourPix(8);
 
     std::vector<std::vector<uint8_t>> recoveredData = colourPix.PixelsToData(rawData, 0, nPixels / 8);
-    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, 3);
+    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, 24);
 
     std::vector<double> accuracy;
     accuracy.reserve(trueData.size());
