@@ -35,11 +35,11 @@ for i in range(len(barcode_background)):
         barcode_background[i][j][1] += (noise.snoise3(i * 2, j * 2, 1) * 0.1)
         barcode_background[i][j][2] += (noise.snoise3(i * 2, j * 2, 2) * 0.1)
 
-for i in range(70):
-    for j in range(70):
-        barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][0] = 1
-        barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][1] = 1
-        barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][2] = 0
+# for i in range(70):
+#     for j in range(70):
+#         barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][0] = 1
+#         barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][1] = 1
+#         barcode_background[i + len(barcode_background) // 2][j + len(barcode_background[i]) // 2][2] = 0
 
 
 

@@ -1,5 +1,5 @@
 add_library(lib STATIC 
-    "barcode_layout.cpp" "image_aux.cpp" "compressor.cpp" "colours.cpp" "split_error.cpp" "split_bytes.cpp" "barcode_writer.cpp" "colour_palletes.cpp" "error_layout.cpp" "header_data.cpp"
+    "barcode_layout.cpp" "image_aux.cpp" "compressor.cpp" "colours.cpp" "split_error.cpp" "split_bytes.cpp" "barcode_writer.cpp" "colour_palletes.cpp" "error_layout.cpp" "header_data.cpp" "random_data_gen.cpp"
 )
 
 add_library(alignment_lib STATIC
@@ -18,8 +18,18 @@ add_executable(Alignment
     "alignment.cpp"
 )
 
+add_executable(EncoderTest
+    "encoder_error_counter.cpp"
+)
+
+add_executable(DecoderTest
+    "decoder_error_counter.cpp"
+)
+
 target_link_libraries(Encoder PRIVATE lib schifra)
 target_link_libraries(Decoder PRIVATE lib schifra)
+target_link_libraries(EncoderTest PRIVATE lib schifra)
+target_link_libraries(DecoderTest PRIVATE lib schifra)
 target_link_libraries(Alignment PRIVATE alignment_lib)
 
 target_link_libraries(
