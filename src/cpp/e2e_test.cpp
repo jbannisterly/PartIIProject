@@ -40,10 +40,10 @@ int main(){
 
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(errorSplitData);
 
-    BarcodeWriter writer(GetBarcode());
+    BarcodeWriter writer(GetBarcode4Detailed());
     std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData);
 
-    Mat image(BARCODE_SIZE, BARCODE_SIZE, CV_8UC3);
+    Mat image(BARCODE_HEIGHT, BARCODE_WIDTH, CV_8UC3);
     image.data = imageData.data();
 
     imwrite("output/img/integration.png", image);
@@ -65,7 +65,7 @@ int main(){
             exit(-1);
         }
 
-        BarcodeWriter writer(GetBarcode());
+        BarcodeWriter writer(GetBarcode4Detailed());
         std::vector<uint8_t> recoveredPixels = writer.BarcodeToPixels(recoveredImageData, totalLength);
         std::vector<uint8_t> recoveredPixelsCompare(recoveredPixels.begin(), recoveredPixels.begin() + pixelData.size());
         if (recoveredPixelsCompare != pixelData) {

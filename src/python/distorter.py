@@ -5,10 +5,10 @@ import noise
 
 barcode = cv2.imread("output/img/output.png")
 y,x,c = barcode.shape
-barcode = cv2.resize(barcode, (y * 8, x * 8), interpolation=cv2.INTER_NEAREST)
+barcode = cv2.resize(barcode, (x * 8, y * 8), interpolation=cv2.INTER_NEAREST)
 y,x,c = barcode.shape
 
-proj_from = np.float32([[0,0],[y,0],[0,x],[y,x]])
+proj_from = np.float32([[0,0],[x,0],[0,y],[x,y]])
 proj_to = np.float32([[40,605],[940, 506],[100,1460],[1028,1488]])
 
 transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)

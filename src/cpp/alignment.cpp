@@ -189,7 +189,7 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
     return centres;
 }
 
-Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::string debugPath = ""){
+Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, int pixelOffsetExpand, std::string debugPath = ""){
     int nPixels = inputImage.cols * inputImage.rows;
     DebugImage debug(inputImage.cols, inputImage.rows);
 
@@ -198,7 +198,7 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
     std::vector<double> grey = ImageProcessing::Greyscale(data, nPixels);
     std::vector<uint8_t> threshold = ImageProcessing::Threshold(grey, inputImage.rows, inputImage.cols);
 
-
+    std::vector<uint8_t> debugBackground(data);
     Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
     if (debugPath != "") {
@@ -249,11 +249,11 @@ Mat AlignImage(Mat inputImage, int projectionSize, int pixelOffsetExpand, std::s
 
     std::cout << "Estimated size\n" << EstimateBarcodeSize(bounds, centresVec) << std::endl;
 
-    outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(projectionSize, projectionSize)); 
+    outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(projectionWidth, projectionHeight)); 
 
     std::cout << "Projected image" << std::endl;
 
-    debug.WriteImage(debugPath, data);
+    debug.WriteImage(debugPath, debugBackground);
 
     return outputImage;
 }
@@ -268,13 +268,13 @@ int main(){
     Mat nextImage;
 
     for (int i = 0; i < ALIGNMENT_ITERATIONS; i++){
-        nextImage = AlignImage(image.clone(), image.rows, 100, filePathDebug + std::to_string(i) +  ".png");
+        nextImage = AlignImage(image.clone(), BARCODE_HEIGHT * 16, BARCODE_WIDTH * 16, 100, filePathDebug + std::to_string(i) +  ".png");
         imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
         image = nextImage;
     }
 
     
-    Mat outputImage = AlignImage(nextImage, BARCODE_SIZE, 0, filePathDebug + "final.png");
+    Mat outputImage = AlignImage(nextImage, BARCODE_HEIGHT, BARCODE_WIDTH, 0, filePathDebug + "final.png");
     std::cout << "writing the final image" << std::endl;
     imwrite(filePathOutFinal, outputImage);
     std::cout << "Finished program" << std::endl;

@@ -42,7 +42,7 @@ int main(){
     BarcodeWriter writer(GetBarcode4Detailed());
     std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData);
 
-    Mat image(BARCODE_SIZE, BARCODE_SIZE, CV_8UC3);
+    Mat image(BARCODE_HEIGHT, BARCODE_WIDTH, CV_8UC3);
     image.data = imageData.data();
 
     imwrite("output/img/output.png", image);
