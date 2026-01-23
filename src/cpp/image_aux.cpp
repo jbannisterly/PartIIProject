@@ -47,6 +47,6 @@ namespace ImageAux {
 
         warpPerspective(input.clone(), output, transform, size);
 
-        return output;
+        return output.clone();
     }
 }

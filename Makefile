@@ -26,6 +26,10 @@ l_bounds:
 	g++ -g -o output/bin/Lib_Bounds src/cpp/python_lib_get_bounds.cpp src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp src/cpp/image_debug.cpp src/cpp/finder_patterns.cpp src/cpp/finder_group.cpp src/cpp/image_processing.cpp src/cpp/pattern_valid.cpp src/cpp/bounding_box.cpp `pkg-config --cflags --libs opencv4`
 	./output/bin/Lib_Bounds
 
+l_count:
+	g++ -g -w -Ilibs/ -o output/bin/Lib_Count src/cpp/python_lib_error_count.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp `pkg-config --cflags --libs opencv4 zlib`
+
+
 alignment_profile:
 	g++ -Wall -pg -o output/bin/Alignment src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp `pkg-config --cflags --libs opencv4`
 	./output/bin/Alignment
