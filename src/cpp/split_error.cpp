@@ -25,3 +25,13 @@
 
     SplitError::SplitError(std::vector<ErrorCorrectionVirtual*> &inErrorCorrectors) :
     errorCorrectors{inErrorCorrectors} {}
+
+    int SplitError::GetErrorCount() {
+        int count = 0;
+        
+        for (int i = 0; i < errorCorrectors.size(); i++) {
+            count += errorCorrectors[i]->errorsDetected;
+        }
+
+        return count;
+    }

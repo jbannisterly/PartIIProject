@@ -12,5 +12,6 @@ class SplitError {
     std::vector<std::vector<uint8_t>> Encode(std::vector<std::vector<uint8_t>> &splitBytes);
     std::vector<std::vector<uint8_t>> Decode(std::vector<std::vector<uint8_t>> &splitBytes);
     SplitError(std::vector<ErrorCorrectionVirtual*> &errorCorrectors);
+    int GetErrorCount();
 
 };

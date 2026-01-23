@@ -21,6 +21,8 @@ class ErrorCorrectionVirtual {
     virtual uint8_t getBlockLen() = 0;
     virtual uint8_t getFECLen() = 0;
     virtual uint8_t getDataLen() = 0;
+
+    int errorsDetected = 0;
     // virtual ~ErrorCorrectionVirtual() {}
     // virtual ErrorCorrectionVirtual() {}
     // virtual ErrorCorrectionVirtual(&ErrorCorrectionVirtual) {}
@@ -92,6 +94,8 @@ class ErrorCorrection: public ErrorCorrectionVirtual {
                 decodedData.push_back(block.data[j]);
             }
         }
+
+        errorsDetected += block.errors_detected;
 
         return decodedData;
     }
