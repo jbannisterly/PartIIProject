@@ -2,6 +2,8 @@
 
 using namespace cv;
 
+namespace Alignment {
+
 std::vector<FinderGroup> GroupFinders(std::vector<FinderCandidate> &candidates){
     std::vector<FinderGroup> finderGroup;
 
@@ -175,7 +177,7 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
 }
 
 
-AlignmentData GetBounds(Mat inputImage, std::string debugPath = "") {
+AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
     AlignmentData alignmentData;
     
     int nPixels = inputImage.cols * inputImage.rows;
@@ -225,7 +227,7 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath = "") {
     return alignmentData;
 }
 
-Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath = ""){
+Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath){
     Mat outputImage;
 
     AlignmentData alignment = GetBounds(inputImage, debugPath);
@@ -243,24 +245,4 @@ Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double
     return outputImage.clone();
 }
 
-int main(){
-    std::string filePathDebug = "output/img/output_debug_";
-    std::string filePathOut = "output/img/output_align_";
-    std::string filePath = "output/img/output_distorted.png";
-    std::string filePathOutFinal = "output/img/output_align.png";
-
-    Mat image = imread(filePath);
-    Mat nextImage;
-
-    for (int i = 0; i < ALIGNMENT_ITERATIONS; i++){
-        nextImage = AlignImage(image.clone(), BARCODE_HEIGHT * 16, BARCODE_WIDTH * 16, 0.1, filePathDebug + std::to_string(i) +  ".png");
-        imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
-        image = nextImage;
-    }
-
-    
-    Mat outputImage = AlignImage(nextImage, BARCODE_HEIGHT, BARCODE_WIDTH, 0, filePathDebug + "final.png");
-    std::cout << "writing the final image" << std::endl;
-    imwrite(filePathOutFinal, outputImage);
-    std::cout << "Finished program" << std::endl;
 }

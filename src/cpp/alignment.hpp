@@ -26,3 +26,8 @@ struct AlignmentData {
     int estimatedHeight;
 };
 
+namespace Alignment {
+    cv::Mat AlignImage(cv::Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath = "");
+    AlignmentData GetBounds(cv::Mat inputImage, std::string debugPath = "");
+}
+
