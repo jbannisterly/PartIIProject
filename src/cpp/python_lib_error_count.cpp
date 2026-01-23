@@ -17,7 +17,7 @@
 using namespace cv;
 
 int main(int argc, char* argv[]){
-        Mat inputImage = imread("output/img/output_distorted.png", IMREAD_COLOR);
+        Mat inputImage = imread("output/img/output_distorted2.png", IMREAD_COLOR);
         std::array<int, 8> inputCoords;
 
         for (int i = 0; i < 8; i++) {
