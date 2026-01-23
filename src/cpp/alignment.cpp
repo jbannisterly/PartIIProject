@@ -250,12 +250,13 @@ Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double
     std::cout << "Estimated size\n" << EstimateBarcodeSize(bounds, centresVec) << std::endl;
 
     outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(projectionWidth, projectionHeight)); 
+    imwrite("output/img/output_align.png", outputImage);
 
     std::cout << "Projected image" << std::endl;
 
     // debug.WriteImage(debugPath, debugBackground);
 
-    return outputImage;
+    return outputImage.clone();
 }
 
 int main(){
