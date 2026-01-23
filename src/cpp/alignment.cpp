@@ -254,7 +254,7 @@ Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double
 
     std::cout << "Projected image" << std::endl;
 
-    // debug.WriteImage(debugPath, debugBackground);
+    debug.WriteImage(debugPath, debugBackground);
 
     return outputImage.clone();
 }
