@@ -1,19 +1,4 @@
-#include "_config.hpp"
 #include "alignment.hpp"
-#include <opencv2/opencv.hpp>
-#include "image_aux.hpp"
-#include <vector>
-#include <stdio.h>
-#include "vector_helper.hpp"
-#include "profiling.hpp"
-#include <functional>
-#include "image_aux.hpp"
-#include "image_processing.hpp"
-#include "image_debug.hpp"
-#include "finder_group.hpp"
-#include "finder_patterns.hpp"
-#include "pattern_valid.hpp"
-#include "bounding_box.hpp"
 
 using namespace cv;
 
@@ -129,7 +114,7 @@ std::array<FinderCandidate, 3> OrderCentres(std::vector<FinderCandidate> &centre
     return candidatesSorted;
 }
 
-int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
+cv::Size2i EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     double centreDistanceH = (centres[1] - centres[2]).Magnitude();
     double boundsDistanceH = (bounds[1] - bounds[2]).Magnitude();
 
@@ -142,17 +127,17 @@ int EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
 
     std::cout << "estimated width:  " << sizeEstimateH << std::endl;
     std::cout << "estimated height: " << sizeEstimateV << std::endl;
-    return int((sizeEstimateH + sizeEstimateV) / 2);
+    return Size2i(round(sizeEstimateH), round(sizeEstimateV));
 }
 
-std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre, DebugImage debugImage) {
+std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre) {
     std::vector<FinderCandidate> finder = FinderPatterns::FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
 
-    if (patternSize == 3) {
-        for (int i = 0; i < finder.size(); i++) {
-            debugImage.DebugCentre(finder[i]);
-        }
-    }
+    // if (patternSize == 3) {
+    //     for (int i = 0; i < finder.size(); i++) {
+    //         debugImage.DebugCentre(finder[i]);
+    //     }
+    // }
 
     std::vector<FinderGroup> finderGroups = GroupFinders(finder);
     std::vector<int> finderGroupsValidIndex;
@@ -189,56 +174,62 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
     return centres;
 }
 
-Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath = ""){
+
+AlignmentData GetBounds(Mat inputImage, std::string debugPath = "") {
+    AlignmentData alignmentData;
+    
     int nPixels = inputImage.cols * inputImage.rows;
-    DebugImage debug(inputImage.cols, inputImage.rows);
+    // DebugImage debug(inputImage.cols, inputImage.rows);
 
     std::vector<uint8_t> data = ImageAux::MatToBytes(inputImage);
 
     std::vector<double> grey = ImageProcessing::Greyscale(data, nPixels);
     std::vector<uint8_t> threshold = ImageProcessing::Threshold(grey, inputImage.rows, inputImage.cols);
 
-    std::vector<uint8_t> debugBackground(data);
-    Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
+    // std::vector<uint8_t> debugBackground(data);
+    // Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
-    if (debugPath != "") {
-        imwrite("output/img/output_threshold.png", thresholdImage);
-    }
+    // if (debugPath != "") {
+    //     imwrite("output/img/output_threshold.png", thresholdImage);
+    // }
 
-    std::cout << "Threshold" << std::endl;
-
-    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0), FinderCandidate(1, 0, 0), FinderCandidate(0, 1, 0)}, debug);
-    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)}, debug);
+    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0), FinderCandidate(1, 0, 0), FinderCandidate(0, 1, 0)});
+    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)});
 
     std::array<FinderCandidate, 3> centresOrdered = OrderCentres(centres);
 
-    for (int i = 0; i < centresOrdered.size(); i++) {
-        debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
-    }
-    debug.DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
-    
-    std::cout << "centres" << std::endl;
+    // for (int i = 0; i < centresOrdered.size(); i++) {
+    //     debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
+    // }
+    // debug.DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
 
     std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres4[0]);
 
-    for (int i = 0; i < bounds.size(); i++) {
-        debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
-    }
+    // for (int i = 0; i < bounds.size(); i++) {
+    //     debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
+    // }
 
-    std::vector<uint8_t> pixels = Uint8ToPixels(threshold);
+    // debug.WriteImage(debugPath, debugBackground);
 
-    Mat outputImage;
-
-    int projectCoords[8];
-    for (int i = 0; i < 4; i++){
-        projectCoords[i * 2] = bounds[i].x;
-        projectCoords[i * 2 + 1] = bounds[i].y;
-    }
+    alignmentData.bounds = bounds;
 
     Vec3 centresVec[3];
     for (int i = 0; i < 4; i++){
         centresVec[i] = Vec3(centresOrdered[i].x, centresOrdered[i].y, 0);
     }
+
+    cv::Size2i estimatedSize = EstimateBarcodeSize(bounds, centresVec);
+    alignmentData.estimatedHeight = estimatedSize.height;
+    alignmentData.estimatedWidth = estimatedSize.width;
+
+    return alignmentData;
+}
+
+Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath = ""){
+    Mat outputImage;
+
+    AlignmentData alignment = GetBounds(inputImage, debugPath);
+    std::array<Vec3, 4> bounds = alignment.bounds;
 
     std::array<Vec3, 4> expandedCoords = BoundingBox::ExpansionBox(bounds, fractionExpand);
     std::array<int, 8> projectCoordsAdjusted;
@@ -247,14 +238,7 @@ Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double
         projectCoordsAdjusted[i * 2 + 1] = expandedCoords[i].y;
     }
 
-    std::cout << "Estimated size\n" << EstimateBarcodeSize(bounds, centresVec) << std::endl;
-
     outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(projectionWidth, projectionHeight)); 
-    imwrite("output/img/output_align.png", outputImage);
-
-    std::cout << "Projected image" << std::endl;
-
-    debug.WriteImage(debugPath, debugBackground);
 
     return outputImage.clone();
 }
