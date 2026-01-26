@@ -60,4 +60,9 @@ int main(){
         std::cout << accuracy[i] << std::endl;
     }
 
+    double capacity = 0;
+    for (int i = 0; i < accuracy.size(); i++) {
+        capacity += 1 - ((1 - accuracy[i]) * 2);
+    }
+    std::cout << "bits per pixel " << capacity << std::endl;
 }
