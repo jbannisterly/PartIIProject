@@ -181,14 +181,14 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
     AlignmentData alignmentData;
     
     int nPixels = inputImage.cols * inputImage.rows;
-    // DebugImage debug(inputImage.cols, inputImage.rows);
+    DebugImage debug(inputImage.cols, inputImage.rows);
 
     std::vector<uint8_t> data = ImageAux::MatToBytes(inputImage);
 
     std::vector<double> grey = ImageProcessing::Greyscale(data, nPixels);
     std::vector<uint8_t> threshold = ImageProcessing::Threshold(grey, inputImage.rows, inputImage.cols);
 
-    // std::vector<uint8_t> debugBackground(data);
+    std::vector<uint8_t> debugBackground(data);
     // Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
     // if (debugPath != "") {
@@ -200,18 +200,18 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
 
     std::array<FinderCandidate, 3> centresOrdered = OrderCentres(centres);
 
-    // for (int i = 0; i < centresOrdered.size(); i++) {
-    //     debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
-    // }
-    // debug.DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
+    for (int i = 0; i < centresOrdered.size(); i++) {
+        debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
+    }
+    debug.DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
 
     std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres4[0]);
 
-    // for (int i = 0; i < bounds.size(); i++) {
-    //     debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
-    // }
+    for (int i = 0; i < bounds.size(); i++) {
+        debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
+    }
 
-    // debug.WriteImage(debugPath, debugBackground);
+    debug.WriteImage(debugPath, debugBackground);
 
     alignmentData.bounds = bounds;
 
