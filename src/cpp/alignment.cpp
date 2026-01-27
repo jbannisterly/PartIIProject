@@ -1,4 +1,6 @@
 #include "alignment.hpp"
+#include <optional>
+#include <iostream>
 
 using namespace cv;
 
@@ -58,7 +60,7 @@ std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> &finderGroups, 
 
     int maxSize = finderGroups[finderGroupsValidIndex[0]].size();
     for (int i = 0; i < finderGroupsValidIndex.size(); i++){
-        if(finderGroups[finderGroupsValidIndex[i]].size() * 3 > maxSize){
+        if(finderGroups[finderGroupsValidIndex[i]].size() * 100 > maxSize){
             FinderCandidate centre = finderGroups[finderGroupsValidIndex[i]].CentreRefined();
             centres.push_back(centre);
             // std::cout << "Centre size " << centre.width << " Centre count " << finderGroups[finderGroupsValidIndex[i]].size() << std::endl;
@@ -132,16 +134,23 @@ cv::Size2i EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     return Size2i(round(sizeEstimateH), round(sizeEstimateV));
 }
 
-std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre) {
+std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre, std::optional<DebugImage*> debug={}) {
     std::vector<FinderCandidate> finder = FinderPatterns::FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
 
-    // if (patternSize == 3) {
-    //     for (int i = 0; i < finder.size(); i++) {
-    //         debugImage.DebugCentre(finder[i]);
-    //     }
-    // }
+    if (firstWhite) {
+        for (int i = 0; i < finder.size(); i++) {
+            debug.value()->DebugCentre(finder[i], {0, 0, 255});
+        }
+    }
 
     std::vector<FinderGroup> finderGroups = GroupFinders(finder);
+
+    if (firstWhite) {
+        for (int i = 0; i < finderGroups.size(); i++) {
+            debug.value()->DebugCross(finderGroups[i].CentreRefined().x, finderGroups[i].CentreRefined().y, inputImage.cols , finderGroups[i].size(), {0, 255, 255});
+        }
+    }
+
     std::vector<int> finderGroupsValidIndex;
 
     for (int i = 0; i < finderGroups.size(); i++){
@@ -165,12 +174,13 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
                 bestDistance = distance;
             }
         }
-        quality[i] = qualNX * qualWidth * (1 - bestDistance);
+        quality[i] = qualNX * qualWidth * pow((1 - bestDistance), 3);
     }
 
     std::sort(finderGroupsValidIndex.begin(), finderGroupsValidIndex.end(), [&quality](int a, int b){
         return quality[a] > quality[b];
     });
+
     std::vector<FinderCandidate> centres = GetCentres(finderGroups, finderGroupsValidIndex);
 
     return centres;
@@ -195,17 +205,19 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
     //     imwrite("output/img/output_threshold.png", thresholdImage);
     // }
 
-    std::vector<FinderCandidate> centres = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0), FinderCandidate(1, 0, 0), FinderCandidate(0, 1, 0)});
-    std::vector<FinderCandidate> centres4 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)});
+    std::vector<FinderCandidate> centres0 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(1, 0, 0)});
+    std::vector<FinderCandidate> centres1 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0)});
+    std::vector<FinderCandidate> centres2 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 1, 0)});
+    std::vector<FinderCandidate> centres3 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)}, &debug);
 
-    std::array<FinderCandidate, 3> centresOrdered = OrderCentres(centres);
+    std::array<FinderCandidate, 3> centresOrdered = {centres0[0], centres1[0], centres2[0]};
 
     for (int i = 0; i < centresOrdered.size(); i++) {
-        debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, 10);
+        debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, centresOrdered[i].width, {0, 255, 0});
     }
-    debug.DebugCross(int(centres4[0].x), int(centres4[0].y), inputImage.cols, 10);
 
-    std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres4[0]);
+
+    std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres3[0]);
 
     for (int i = 0; i < bounds.size(); i++) {
         debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});

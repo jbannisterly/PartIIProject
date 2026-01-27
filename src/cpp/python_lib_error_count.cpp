@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
         int channels = image.channels();
         int rows = image.rows;
         int cols = image.cols;
-        int totalLength = rows * cols * channels;
+        int totalLength = rows * cols;
 
         std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 

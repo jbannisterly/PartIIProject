@@ -82,7 +82,7 @@ bool FinderGroup::isValid(std::vector<uint8_t> threshold, int dataX, int dataY, 
 
     bool verticalFound = verticalCandidates.size() > 0;
 
-    return verticalFound;
+    return verticalFound or true;
 }
 
 int FinderGroup::size(){

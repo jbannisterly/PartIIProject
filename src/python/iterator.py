@@ -5,7 +5,7 @@ import cv2
 
 def MakeGuess(bounds):
   bound_str = [str(x * 2) for x in bounds]
-  error_count = str(subprocess.check_output(['./output/bin/Lib_Count'] + bound_str + ['100', '100'])).split('\\n')
+  error_count = str(subprocess.check_output(['./output/bin/Lib_Count'] + bound_str + ['200', '200'])).split('\\n')
   n_errors = error_count[-2]
   print(bounds)
   print(n_errors)
