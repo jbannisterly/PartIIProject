@@ -43,7 +43,7 @@ namespace SplitBytes {
         int lengthAvailable = dataLength;
         int lengthDesired;
 
-        for (int i = 0; i < splitData.size() - 1; i++) {
+        for (int i = 0; i < splitData.size(); i++) {
             lengthDesired = splitData[i].size();
             if (lengthAvailable >= lengthDesired) {
                 connectedData.insert(connectedData.end(), splitData[i].begin(), splitData[i].end());
