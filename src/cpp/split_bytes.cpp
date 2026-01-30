@@ -40,11 +40,19 @@ namespace SplitBytes {
     std::vector<uint8_t> Decode(std::vector<std::vector<uint8_t>> &splitData, int dataLength) {
         std::vector<uint8_t> connectedData;
         connectedData.reserve(dataLength);
+        int lengthAvailable = dataLength;
+        int lengthDesired;
 
         for (int i = 0; i < splitData.size() - 1; i++) {
-            connectedData.insert(connectedData.end(), splitData[i].begin(), splitData[i].end());
+            lengthDesired = splitData[i].size();
+            if (lengthAvailable >= lengthDesired) {
+                connectedData.insert(connectedData.end(), splitData[i].begin(), splitData[i].end());
+                lengthAvailable -= lengthDesired;
+            } else {
+                connectedData.insert(connectedData.end(), splitData[i].begin(), splitData[i].begin() + lengthAvailable);
+                lengthAvailable = 0;
+            }
         }
-        connectedData.insert(connectedData.end(), splitData[splitData.size() - 1].begin(), splitData[splitData.size() - 1].begin() + dataLength - connectedData.size());
 
         return connectedData;
     }
