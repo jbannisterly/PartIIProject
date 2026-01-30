@@ -14,9 +14,16 @@
 
 using namespace cv;
 
-int main(){
+int main(int argc, char *argv[]){
+
+    std::string path = "output/img/output_align.png";
+
+    if (argc > 1) {
+        path = std::string(argv[1]);
+    }
+
     try {
-        Mat image = imread("output/img/output_align.png");
+        Mat image = imread(path);
 
         int channels = image.channels();
         int rows = image.rows;
