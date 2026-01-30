@@ -60,8 +60,8 @@ std::vector<FinderCandidate> GetCentres(std::vector<FinderGroup> &finderGroups, 
 
     int maxSize = finderGroups[finderGroupsValidIndex[0]].size();
     for (int i = 0; i < finderGroupsValidIndex.size(); i++){
-        if(finderGroups[finderGroupsValidIndex[i]].size() * 100 > maxSize){
-            FinderCandidate centre = finderGroups[finderGroupsValidIndex[i]].CentreRefined();
+        if(finderGroups[finderGroupsValidIndex[i]].size() * 3 > maxSize){
+            FinderCandidate centre = finderGroups[finderGroupsValidIndex[i]].Centre();
             centres.push_back(centre);
             // std::cout << "Centre size " << centre.width << " Centre count " << finderGroups[finderGroupsValidIndex[i]].size() << std::endl;
         }else{
@@ -139,7 +139,7 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
 
     if (firstWhite) {
         for (int i = 0; i < finder.size(); i++) {
-            debug.value()->DebugCentre(finder[i], {0, 0, 255});
+            // debug.value()->DebugCentre(finder[i], {0, 0, 255});
         }
     }
 
@@ -147,9 +147,21 @@ std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<ui
 
     if (firstWhite) {
         for (int i = 0; i < finderGroups.size(); i++) {
-            debug.value()->DebugCross(finderGroups[i].CentreRefined().x, finderGroups[i].CentreRefined().y, inputImage.cols , finderGroups[i].size(), {0, 255, 255});
+            // debug.value()->DebugCross(finderGroups[i].CentreRefined().x, finderGroups[i].CentreRefined().y, inputImage.cols , finderGroups[i].size(), {0, 255, 255});
+        }
+
+            int max = 0;
+    int maxind = 0;
+    for (int i = 0; i < finderGroups.size(); i++) {
+        if (finderGroups[i].size() > max) {
+            max = finderGroups[i].size();
+            maxind = i;
         }
     }
+    finderGroups[maxind].isValid(threshold, inputImage.cols, inputImage.rows, patternSize, patternValid, firstWhite);
+
+    }
+
 
     std::vector<int> finderGroupsValidIndex;
 
@@ -215,7 +227,7 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
     for (int i = 0; i < centresOrdered.size(); i++) {
         debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, centresOrdered[i].width, {0, 255, 0});
     }
-
+        debug.DebugCross(int(centres3[0].x), int(centres3[0].y), inputImage.cols, centres3[0].width, {0, 255, 0});
 
     std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres3[0]);
 

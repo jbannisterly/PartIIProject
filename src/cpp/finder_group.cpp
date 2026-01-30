@@ -4,8 +4,8 @@
 
 Position* FinderGroup::VerticalOffset(){
     FinderCandidate centre = Centre();
-    double startX = centre.x - centre.width * 1.3 / 7;
-    double startY = centre.y - centre.width * 5.5 / 7;
+    double startX = centre.x - centre.width * 4 / 7;
+    double startY = centre.y - centre.width * 6 / 7;
     if (startX < 0) startX = 0;
     if (startY < 0) startY = 0;
 
@@ -23,8 +23,8 @@ VerticalData FinderGroup::VerticalSample(std::vector<uint8_t> data, int dataX, i
 
     VerticalData sample;
         
-    sample.height = centre.width * 11 / 7;
-    sample.width = centre.width * 2.6 / 7;
+    sample.height = centre.width * 12 / 7;
+    sample.width = centre.width * 8 / 7;
 
     if (sample.height + startY > dataY) sample.height = dataY - startY;
 
@@ -82,7 +82,7 @@ bool FinderGroup::isValid(std::vector<uint8_t> threshold, int dataX, int dataY, 
 
     bool verticalFound = verticalCandidates.size() > 0;
 
-    return verticalFound or true;
+    return verticalFound;
 }
 
 int FinderGroup::size(){

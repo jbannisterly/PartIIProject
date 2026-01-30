@@ -44,7 +44,6 @@ namespace BoundingBox {
 
     std::array<Vec3, 4> BoundingBox(std::array<FinderCandidate, 3> finders, FinderCandidate finder4){
         const double MODULEOFFSET = 4;
-        const double MODULEOFFSET4 = 5;
 
         std::array<Vec3, 4> findersVec;
         std::array<Vec3, 4> bounds;
@@ -64,7 +63,6 @@ namespace BoundingBox {
 
     std::array<Vec3, 4> BoundingBoxRectangle(std::array<FinderCandidate, 3> finders, FinderCandidate finder4){
         const double MODULEOFFSET = 4;
-        const double MODULEOFFSET4 = 5;
 
         std::array<Vec3, 4> findersVec;
         std::array<Vec3, 4> bounds;

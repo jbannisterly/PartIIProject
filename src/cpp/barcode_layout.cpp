@@ -1,7 +1,7 @@
 #include "barcode_layout.hpp"
 #include "_config.hpp"
 
-const int FINDER_SIZE = 2;
+const int FINDER_SIZE = 1;
 
 void DrawSquare(BarcodeLayout &barcode, uint8_t colour, int positionX, int positionY, int barcodeWidth, int squareWidth, int squareHeight, int mask=0){
     for (int i = 0; i < squareHeight; i++){
