@@ -89,13 +89,16 @@ def GenImage(ids):
 
 def GetDistorted(id, distorter):
     path = 'output/img/cnn/img_raw_' + str(id) + '.png'
-    delta = np.random.uniform(size=2) * 100 + 300
+    theta = np.random.uniform(size=1) * 100
+    magnitude = np.random.uniform(size=1) * 100 + 600
+    delta = [np.cos(theta[0]) * magnitude[0], np.sin(theta[0]) * magnitude[0]]
     target = np.array([[0,0], [delta[0], delta[1]], [-delta[1], delta[0]], [delta[0]-delta[1], delta[1]+delta[0]]])
     offset = np.array([delta[0]-delta[1], delta[1]+delta[0]]) / 2
     target = target - offset + 512 + np.random.uniform(size=(4,2)) * 50
     print(target)
     distorted = distorter.distort(path, target)
-    # cv2.imwrite('output/img/temp/img_' + str(id) + '.png', distorted)
+    if np.random.uniform(size=1) > 0.9:
+        cv2.imwrite('output/img/temp/img_' + str(np.floor(np.random.uniform(size=1) * 100)) + '.png', distorted)
     return distorted,np.float32(np.ndarray.flatten(np.array(target)) / 1024)
 
 
@@ -144,7 +147,7 @@ while True:
             datas += [torch.tensor(data)]
             solutions += [solution]
 
-    for i in range(100):
+    for i in range(20):
         if os.path.exists(modelSavePath):
             model.load_state_dict(torch.load(modelSavePath))
         print('training ' + str(i))
