@@ -79,6 +79,7 @@ class CNN(torch.nn.Module):
         )
 
     def forward(self, x):
+        print(x.shape)
         x = self.net(x)
         return x
     
@@ -125,31 +126,53 @@ def train(model, optimiser, lossFn, target, data):
     print(loss)
 
 
-model = CNN().to('cpu')
-optimiser = torch.optim.SGD(model.parameters(), 0.0001)
-lossFn = torch.nn.MSELoss()
+def RunTraining():
+    optimiser = torch.optim.SGD(model.parameters(), 0.0001)
+    lossFn = torch.nn.MSELoss()
 
+    while True:
+        GenImage(np.arange(10))
+
+        datas = []
+        solutions = []
+        distorter = Distorter()
+
+        print('gen new images...')
+
+        for i in range(10):
+            for j in range(10):
+                data,solution = GetDistorted(j, distorter)
+                data = np.swapaxes(data, 0, 2)
+                datas += [torch.tensor(data)]
+                solutions += [solution]
+
+        for i in range(20):
+            if os.path.exists(modelSavePath):
+                model.load_state_dict(torch.load(modelSavePath))
+            print('training ' + str(i))
+            train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
+            torch.save(model.state_dict(), modelSavePath)
+
+def RunModel(path):
+    data = cv2.imread(path)
+    if os.path.exists(modelSavePath):
+        model.load_state_dict(torch.load(modelSavePath))
+    model.eval()
+
+    data = data.swapaxes(0,2)
+    dataTensor = torch.tensor(np.float32(data)).unsqueeze(0)
+    with torch.no_grad():
+        output = model(dataTensor)
+    proj_from = np.float32(output[0]).reshape((4,2)) * 1024
+    proj_to = np.float32([[0,0],[200, 0], [0, 200], [200, 200]])
+    print(proj_from)
+    transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)
+    proj = np.float32(cv2.warpPerspective(cv2.imread(path), transform_matrix, (200, 200)))
+
+    cv2.imwrite('./output/img/output_align.png', proj)
+
+
+model = CNN().to('cpu')
 modelSavePath = './src/python/model_save'
 
-while True:
-    GenImage(np.arange(10))
-
-    datas = []
-    solutions = []
-    distorter = Distorter()
-
-    print('gen new images...')
-
-    for i in range(10):
-        for j in range(10):
-            data,solution = GetDistorted(j, distorter)
-            data = np.swapaxes(data, 0, 2)
-            datas += [torch.tensor(data)]
-            solutions += [solution]
-
-    for i in range(20):
-        if os.path.exists(modelSavePath):
-            model.load_state_dict(torch.load(modelSavePath))
-        print('training ' + str(i))
-        train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
-        torch.save(model.state_dict(), modelSavePath)
+RunTraining()
