@@ -64,39 +64,37 @@ class CNN(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.net = torch.nn.Sequential(
-            torch.nn.Conv2d(3,6,7, padding='same'),
+            torch.nn.Conv2d(3,6,3, padding='same'),
             torch.nn.MaxPool2d((4,4)),
-            torch.nn.Conv2d(6,16,5, padding='same'),
-            torch.nn.MaxPool2d((4,4)),
-            torch.nn.Conv2d(16,16,5, padding='same'),
+            torch.nn.Conv2d(6,6,3, padding='same'),
             torch.nn.MaxPool2d((4,4)),
             torch.nn.Flatten(),
-            torch.nn.Linear(16*16*16, 64),
+            torch.nn.Linear(6*32*32, 64),
             torch.nn.ReLU(),
             torch.nn.Linear(64, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 8)
+            torch.nn.Linear(64, 2)
         )
 
     def forward(self, x):
-        print(x.shape)
+        # print(x.shape)
         x = self.net(x)
         return x
     
 def GenImage(ids):
     for id in ids:
-        randomData = str(np.random.random(1000))
+        randomData = str(np.random.random(10000))
         subprocess.Popen(['./output/bin/Encoder', randomData[:9000], 'output/img/cnn/img_raw_' + str(id) + '.png'])
 
-def GetDistorted(id, distorter):
+def GetDistorted(id, distorter: Distorter):
     path = 'output/img/cnn/img_raw_' + str(id) + '.png'
-    theta = np.random.uniform(size=1) * 100
+    theta = np.random.uniform(size=1) * 0.5 - 0.25
     magnitude = np.random.uniform(size=1) * 100 + 600
     delta = [np.cos(theta[0]) * magnitude[0], np.sin(theta[0]) * magnitude[0]]
     target = np.array([[0,0], [delta[0], delta[1]], [-delta[1], delta[0]], [delta[0]-delta[1], delta[1]+delta[0]]])
     offset = np.array([delta[0]-delta[1], delta[1]+delta[0]]) / 2
     target = target - offset + 512 + np.random.uniform(size=(4,2)) * 50
-    print(target)
+    # print(target)
     distorted = distorter.distort(path, target)
     if np.random.uniform(size=1) > 0.9:
         cv2.imwrite('output/img/temp/img_' + str(np.floor(np.random.uniform(size=1) * 100)) + '.png', distorted)
@@ -127,7 +125,7 @@ def train(model, optimiser, lossFn, target, data):
 
 
 def RunTraining():
-    optimiser = torch.optim.SGD(model.parameters(), 0.0001)
+    optimiser = torch.optim.SGD(model.parameters(), 0.00005)
     lossFn = torch.nn.MSELoss()
 
     while True:
@@ -139,12 +137,15 @@ def RunTraining():
 
         print('gen new images...')
 
-        for i in range(10):
+        for i in range(70):
             for j in range(10):
                 data,solution = GetDistorted(j, distorter)
+                (sizeX, sizeY, sizeC) = data.shape
+                data = data[:int(sizeX/2), :int(sizeY/2), :]
+                data = cv2.cvtColor(data, cv2.COLOR_RGB2HSV)
                 data = np.swapaxes(data, 0, 2)
                 datas += [torch.tensor(data)]
-                solutions += [solution]
+                solutions += [solution[:2]]
 
         for i in range(20):
             if os.path.exists(modelSavePath):
@@ -153,7 +154,7 @@ def RunTraining():
             train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
             torch.save(model.state_dict(), modelSavePath)
 
-def RunModel(path):
+def RunModel(path, outputPath):
     data = cv2.imread(path)
     if os.path.exists(modelSavePath):
         model.load_state_dict(torch.load(modelSavePath))
@@ -169,10 +170,18 @@ def RunModel(path):
     transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)
     proj = np.float32(cv2.warpPerspective(cv2.imread(path), transform_matrix, (200, 200)))
 
-    cv2.imwrite('./output/img/output_align.png', proj)
+    cv2.imwrite(outputPath, proj)
 
 
 model = CNN().to('cpu')
 modelSavePath = './src/python/model_save'
 
 RunTraining()
+# for i in range(50):
+#     RunModel('./output/img/temp/img_[' + str(i) + '.].png', './output/img/output_cnn_' + str(i) + '.png')
+
+# make model simpler
+# train to get [.] pattern (split into 4)
+# generate all data into folder and batch train
+# greyscale first, maybe with saturation
+# dont rotate or skew too much at first
