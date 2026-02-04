@@ -48,13 +48,18 @@ int main(int argc, char *argv[]){
 
         std::cout << splitError.GetErrorCount() << " errors" << std::endl;
 
-        std::vector connectedData = SplitBytes::Decode(correctedSplitData, compressedLen + 2);
+        std::vector<uint8_t> connectedData = SplitBytes::Decode(correctedSplitData, compressedLen + 2);
+
+        std::cout << connectedData.size() << " length" << std::endl;
 
         std::vector<uint8_t> decompressed = Compression::decompress(connectedData.data() + 2, compressedLen); 
+
+        std::cout << decompressed.size() << " length 2" << std::endl;
 
         for (int i = 0; i < decompressed.size(); i++){
             std::cout << (char)decompressed[i];
         }
+        std::cout << std::endl;
 
     } catch (const ExceptionDecompression& e){
         std::cout << e.what() << std::endl;

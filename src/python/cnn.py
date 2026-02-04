@@ -83,8 +83,8 @@ class CNN(torch.nn.Module):
     
 def GenImage(ids):
     for id in ids:
-        randomData = str(np.random.random(10000))
-        subprocess.Popen(['./output/bin/Encoder', randomData[:9000], 'output/img/cnn/img_raw_' + str(id) + '.png'])
+        randomData = np.random.random(10000)
+        subprocess.Popen(['./output/bin/Encoder', "' ".join(str(x) for x in randomData[:1200]) + "'", 'output/img/cnn/img_raw_' + str(id) + '.png'])
 
 def GetDistorted(id, distorter: Distorter):
     path = 'output/img/cnn/img_raw_' + str(id) + '.png'
@@ -147,7 +147,7 @@ def RunTraining():
                 datas += [torch.tensor(data)]
                 solutions += [solution[:2]]
 
-        for i in range(20):
+        while True:
             if os.path.exists(modelSavePath):
                 model.load_state_dict(torch.load(modelSavePath))
             print('training ' + str(i))

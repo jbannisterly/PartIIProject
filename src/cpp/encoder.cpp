@@ -27,6 +27,8 @@ int main(int argc, char *argv[]){
     if (argc > 2) {
         outputPath = std::string(argv[2]);
     }
+    std::cout << message << std::endl;
+    std::cout << "Message length: " << message.size() << std::endl;
 
     std::vector<uint8_t> byteData;
     byteData.reserve(message.size());
