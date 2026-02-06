@@ -44,6 +44,7 @@ class Distorter():
         proj_to = np.float32(target)
 
         transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)
+        final_position = cv2.perspectiveTransform(np.float32([[[35.5, 35.5]]]), transform_matrix)[0][0]
         barcode_proj = np.float32(cv2.warpPerspective(barcode, transform_matrix, (1024, 1024))) / 256
 
         mask = np.zeros((1024, 1024, 3))
@@ -57,7 +58,8 @@ class Distorter():
         barcode_background = barcode_proj * mask + background * (1-mask) + overlay
 
         distorted = np.uint8(np.clip(barcode_background, 0, 255/256) * 256)
-        return distorted
+
+        return final_position, distorted
 
 
 class CNN(torch.nn.Module):
@@ -67,9 +69,9 @@ class CNN(torch.nn.Module):
             torch.nn.Conv2d(3,6,3, padding='same'),
             torch.nn.MaxPool2d((4,4)),
             torch.nn.Conv2d(6,6,3, padding='same'),
-            torch.nn.MaxPool2d((4,4)),
+            torch.nn.MaxPool2d((2,2)),
             torch.nn.Flatten(),
-            torch.nn.Linear(6*32*32, 64),
+            torch.nn.Linear(6*64*64, 64),
             torch.nn.ReLU(),
             torch.nn.Linear(64, 64),
             torch.nn.ReLU(),
@@ -77,7 +79,8 @@ class CNN(torch.nn.Module):
         )
 
     def forward(self, x):
-        # print(x.shape)
+        print("forward begins")
+        print(x.shape)
         x = self.net(x)
         return x
     
@@ -95,10 +98,10 @@ def GetDistorted(id, distorter: Distorter):
     offset = np.array([delta[0]-delta[1], delta[1]+delta[0]]) / 2
     target = target - offset + 512 + np.random.uniform(size=(4,2)) * 50
     # print(target)
-    distorted = distorter.distort(path, target)
+    finder_centre, distorted = distorter.distort(path, target)
     if np.random.uniform(size=1) > 0.9:
         cv2.imwrite('output/img/temp/img_' + str(np.floor(np.random.uniform(size=1) * 100)) + '.png', distorted)
-    return distorted,np.float32(np.ndarray.flatten(np.array(target)) / 1024)
+    return distorted,np.float32(finder_centre / 1024)
 
 
 def GetImage(id):
@@ -125,7 +128,7 @@ def train(model, optimiser, lossFn, target, data):
 
 
 def RunTraining():
-    optimiser = torch.optim.SGD(model.parameters(), 0.00005)
+    optimiser = torch.optim.SGD(model.parameters(), 0.000001)
     lossFn = torch.nn.MSELoss()
 
     while True:
@@ -137,7 +140,7 @@ def RunTraining():
 
         print('gen new images...')
 
-        for i in range(70):
+        for i in range(50):
             for j in range(10):
                 data,solution = GetDistorted(j, distorter)
                 (sizeX, sizeY, sizeC) = data.shape
@@ -166,7 +169,6 @@ def RunModel(path, outputPath):
         output = model(dataTensor)
     proj_from = np.float32(output[0]).reshape((4,2)) * 1024
     proj_to = np.float32([[0,0],[200, 0], [0, 200], [200, 200]])
-    print(proj_from)
     transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)
     proj = np.float32(cv2.warpPerspective(cv2.imread(path), transform_matrix, (200, 200)))
 
@@ -175,7 +177,6 @@ def RunModel(path, outputPath):
 
 model = CNN().to('cpu')
 modelSavePath = './src/python/model_save'
-
 RunTraining()
 # for i in range(50):
 #     RunModel('./output/img/temp/img_[' + str(i) + '.].png', './output/img/output_cnn_' + str(i) + '.png')
