@@ -5,6 +5,7 @@
 std::vector<int> RandomPermutation(int size, int seed) {
     std::vector<int> data;
     data.reserve(size);
+    srand(seed);
     
     for (int i = 0; i < size; i++) {
         data.push_back(i);
@@ -34,6 +35,21 @@ std::vector<uint8_t> ShufflePixels(std::vector<uint8_t> &pixels, std::vector<int
 
     return shuffled;
 }
+
+std::vector<uint8_t> DeShufflePixels(std::vector<uint8_t> &shuffled, std::vector<int> &permutation) {
+    std::vector<uint8_t> pixels;
+    pixels.resize(permutation.size() * 3, 0);
+    
+    for (int i = 0; i < permutation.size(); i++) {
+        int index = permutation[i];
+        for (int j = 0; j < 3; j++) {
+            pixels[i * 3 + j] = shuffled[index * 3 + j];
+        }
+    }
+
+    return pixels;
+}
+
 
 std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels){
     BarcodeLayout layout = templateLayout;
@@ -71,18 +87,20 @@ std::vector<uint8_t> BarcodeWriter::BarcodeToPixels(std::vector<uint8_t> barcode
     BarcodeLayout layout = templateLayout;
     permutation = RandomPermutation(layout.GetDataSize(), 0);
 
-    std::vector<uint8_t> pixels;
-    pixels.reserve(barcodeSize * 3);
+    std::vector<uint8_t> shuffled;
+    shuffled.reserve(barcodeSize * 3);
     int pixelCounter = 0;
 
     for (int i = 0; i < barcodeSize; i++){
         if (templateLayout.mask[i] > 0){
             for (int j = 0; j < 3; j++) {
-                pixels[permutation[pixelCounter]] = (barcode[i * 3 + j]);
+                shuffled.push_back(barcode[i * 3 + j]);
             }
             pixelCounter++;
         } 
     }
+
+    std::vector<uint8_t> pixels = DeShufflePixels(shuffled, permutation);
 
     return pixels;
 }
