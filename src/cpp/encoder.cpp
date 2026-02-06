@@ -52,8 +52,7 @@ int main(int argc, char *argv[]){
     BarcodeWriter writer(GetBarcode4Detailed());
     std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData);
 
-    Mat image(BARCODE_HEIGHT, BARCODE_WIDTH, CV_8UC3);
-    image.data = imageData.data();
+    Mat image(BARCODE_HEIGHT, BARCODE_WIDTH, CV_8UC3, imageData.data());
 
     imwrite(outputPath.c_str(), image);
 }

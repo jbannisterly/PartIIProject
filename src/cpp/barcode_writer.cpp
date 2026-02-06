@@ -1,7 +1,45 @@
 #include "barcode_writer.hpp"
+#include <random>
+#include <iostream>
+
+std::vector<int> RandomPermutation(int size, int seed) {
+    std::vector<int> data;
+    data.reserve(size);
+    
+    for (int i = 0; i < size; i++) {
+        data.push_back(i);
+    }
+
+    for (int i = 0; i < size; i++) {
+        int t1 = random() % size;
+        int t2 = random() % size;
+        int t3 = data[t1];
+        data[t1] = data[t2];
+        data[t2] = t3;
+    }
+
+    return data;
+}
+
+std::vector<uint8_t> ShufflePixels(std::vector<uint8_t> &pixels, std::vector<int> &permutation) {
+    std::vector<uint8_t> shuffled;
+    shuffled.resize(permutation.size() * 3, 0);
+    
+    for (int i = 0; i < pixels.size(); i++) {
+        int index = permutation[i];
+        for (int j = 0; j < 3; j++) {
+            shuffled[index * 3 + j] = pixels[i * 3 + j];
+        }
+    }
+
+    return shuffled;
+}
 
 std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels){
     BarcodeLayout layout = templateLayout;
+    int capacity = layout.GetDataSize();
+    std::vector<int> permutation = RandomPermutation(capacity, 0);
+    std::vector<uint8_t> shuffled = ShufflePixels(pixels, permutation);
     
     int sourceCounter = 0;
     int targetCounter = 0;
@@ -14,12 +52,12 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
         }
     }
 
-    while(sourceCounter < pixels.size()){
+    while(sourceCounter < permutation.size()){
         if (layout.mask[targetCounter] > 0){
             for (int i = 0; i < 3; i++) {
-                layout.data[targetCounter * 3 + i] = pixels[sourceCounter];
-                sourceCounter++;
+                layout.data[targetCounter * 3 + i] = shuffled[sourceCounter * 3 + i];
             }
+            sourceCounter++;
         }
         targetCounter++;
     }
@@ -30,6 +68,9 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
 }
 
 std::vector<uint8_t> BarcodeWriter::BarcodeToPixels(std::vector<uint8_t> barcode, int barcodeSize){
+    BarcodeLayout layout = templateLayout;
+    permutation = RandomPermutation(layout.GetDataSize(), 0);
+
     std::vector<uint8_t> pixels;
     pixels.reserve(barcodeSize * 3);
     int pixelCounter = 0;
@@ -37,8 +78,9 @@ std::vector<uint8_t> BarcodeWriter::BarcodeToPixels(std::vector<uint8_t> barcode
     for (int i = 0; i < barcodeSize; i++){
         if (templateLayout.mask[i] > 0){
             for (int j = 0; j < 3; j++) {
-                pixels.push_back(barcode[i * 3 + j]);
+                pixels[permutation[pixelCounter]] = (barcode[i * 3 + j]);
             }
+            pixelCounter++;
         } 
     }
 

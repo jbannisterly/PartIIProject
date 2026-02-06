@@ -4,6 +4,7 @@ class BarcodeWriter {
     private:
 
     const BarcodeLayout templateLayout;
+    std::vector<int> permutation;
 
     public:
 
