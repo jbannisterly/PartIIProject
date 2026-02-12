@@ -4,6 +4,11 @@ import numpy as np
 import noise
 import subprocess
 import os.path
+import json
+
+PATH_IMG_TRAIN = "output/cnn/training_data/img/"
+PATH_IMG_TEMP = "output/cnn/training_data/img_temp"
+PATH_TRAINING_DATA = "output/cnn/training_data/targets"
 
 class Distorter():
 
@@ -13,7 +18,6 @@ class Distorter():
         
 
     def getBackground(self):
-        print('new backgorund')
         background = np.ones((1024, 1024, 3)) * 0.5
         background[:][:][2] = 0.5
         background[:][:][1] = 0.5
@@ -32,7 +36,6 @@ class Distorter():
                 overlay[i][j][1] += (noise.snoise3(i * 2, j * 2, 1) * 0.1)
                 overlay[i][j][2] += (noise.snoise3(i * 2, j * 2, 2) * 0.1)
         return overlay
-
 
     def distort(self, path, target):
         barcode = cv2.imread(path)
@@ -66,12 +69,12 @@ class CNN(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.net = torch.nn.Sequential(
-            torch.nn.Conv2d(3,6,3, padding='same'),
+            torch.nn.Conv2d(3,32,3, padding='same'),
             torch.nn.MaxPool2d((4,4)),
-            torch.nn.Conv2d(6,6,3, padding='same'),
-            torch.nn.MaxPool2d((2,2)),
+            torch.nn.Conv2d(32,32,3, padding='same'),
+            torch.nn.MaxPool2d((4,4)),
             torch.nn.Flatten(),
-            torch.nn.Linear(6*64*64, 64),
+            torch.nn.Linear(32*32*32, 64),
             torch.nn.ReLU(),
             torch.nn.Linear(64, 64),
             torch.nn.ReLU(),
@@ -84,10 +87,10 @@ class CNN(torch.nn.Module):
         x = self.net(x)
         return x
     
-def GenImage(ids):
+def GenImage(ids, savePath):
     for id in ids:
         randomData = np.random.random(10000)
-        subprocess.Popen(['./output/bin/Encoder', "' ".join(str(x) for x in randomData[:1200]) + "'", 'output/img/cnn/img_raw_' + str(id) + '.png'])
+        subprocess.Popen(['./output/bin/Encoder', "' ".join(str(x) for x in randomData[:1200]) + "'", savePath + str(id) + '.png'])
 
 def GetDistorted(id, distorter: Distorter):
     path = 'output/img/cnn/img_raw_' + str(id) + '.png'
@@ -128,27 +131,19 @@ def train(model, optimiser, lossFn, target, data):
 
 
 def RunTraining():
-    optimiser = torch.optim.SGD(model.parameters(), 0.000001)
+    optimiser = torch.optim.SGD(model.parameters(), 0.00001)
     lossFn = torch.nn.MSELoss()
 
     while True:
-        GenImage(np.arange(10))
 
         datas = []
-        solutions = []
-        distorter = Distorter()
 
-        print('gen new images...')
+        cv2.imread()
+        data = cv2.cvtColor(data, cv2.COLOR_RGB2HSV)
+        data = np.swapaxes(data, 0, 2)
+        datas += [torch.tensor(data)]
 
-        for i in range(50):
-            for j in range(10):
-                data,solution = GetDistorted(j, distorter)
-                (sizeX, sizeY, sizeC) = data.shape
-                data = data[:int(sizeX/2), :int(sizeY/2), :]
-                data = cv2.cvtColor(data, cv2.COLOR_RGB2HSV)
-                data = np.swapaxes(data, 0, 2)
-                datas += [torch.tensor(data)]
-                solutions += [solution[:2]]
+
 
         while True:
             if os.path.exists(modelSavePath):
@@ -174,10 +169,35 @@ def RunModel(path, outputPath):
 
     cv2.imwrite(outputPath, proj)
 
+def InitialiseTrainingData(n_0, n_1):
+    solutions = {}
+    distorter = Distorter()
+
+    GenImage(np.arange(n_0), PATH_IMG_TEMP)
+    
+    for i in range(n_0):
+        for j in range(n_1):
+            data,solution = GetDistorted(j, distorter)
+            (sizeX, sizeY, sizeC) = data.shape
+            data = data[:int(sizeX/2), :int(sizeY/2), :]
+            print("writing")
+            id = str(i) + '_' + str(j)
+            cv2.imwrite(PATH_IMG_TRAIN + id + '.png', data)
+            solutions[id] = {}
+            solutions[id]['x'] = str(solution[0])
+            solutions[id]['y'] = str(solution[1])
+
+    with open(PATH_TRAINING_DATA, 'w') as solutionFile:
+        print(solutions)
+        json.dump(solutions, solutionFile)
+
+
+
 
 model = CNN().to('cpu')
 modelSavePath = './src/python/model_save'
-RunTraining()
+# RunTraining()
+InitialiseTrainingData(50, 10)
 # for i in range(50):
 #     RunModel('./output/img/temp/img_[' + str(i) + '.].png', './output/img/output_cnn_' + str(i) + '.png')
 
