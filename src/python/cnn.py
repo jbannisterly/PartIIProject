@@ -7,8 +7,10 @@ import os.path
 import json
 
 PATH_IMG_TRAIN = "output/cnn/training_data/img/"
+PATH_IMG_TEST = "output/cnn/testing_data/img/"
 PATH_IMG_TEMP = "output/cnn/training_data/img_temp"
 PATH_TRAINING_DATA = "output/cnn/training_data/targets"
+PATH_TESTING_DATA = "output/cnn/testing_data/targets"
 
 class Distorter():
 
@@ -175,25 +177,25 @@ def RunModel(path, outputPath):
 
     cv2.imwrite(outputPath, proj)
 
-def InitialiseTrainingData(train_n0, train_n1):
+def InitialiseData(n0, n1, imgPath, solPath):
     solutions = {}
     distorter = Distorter()
 
-    GenImage(np.arange(train_n0), PATH_IMG_TEMP)
+    GenImage(np.arange(n0), PATH_IMG_TEMP)
     
-    for i in range(train_n0):
-        for j in range(train_n1):
+    for i in range(n0):
+        for j in range(n1):
             data,solution = GetDistorted(j, distorter)
             (sizeX, sizeY, sizeC) = data.shape
             data = data[:int(sizeX/2), :int(sizeY/2), :]
             print("writing")
             id = str(i) + '_' + str(j)
-            cv2.imwrite(PATH_IMG_TRAIN + id + '.png', data)
+            cv2.imwrite(imgPath + id + '.png', data)
             solutions[id] = {}
             solutions[id]['x'] = str(solution[0])
             solutions[id]['y'] = str(solution[1])
 
-    with open(PATH_TRAINING_DATA, 'w') as solutionFile:
+    with open(solPath, 'w') as solutionFile:
         print(solutions)
         json.dump(solutions, solutionFile)
 
@@ -203,15 +205,11 @@ def InitialiseTrainingData(train_n0, train_n1):
 model = CNN().to('cpu')
 modelSavePath = './src/python/model_save'
 
-# InitialiseTrainingData(10, 10)
+InitialiseData(10, 10, PATH_IMG_TRAIN, PATH_TRAINING_DATA)
+InitialiseData(10, 10, PATH_IMG_TEST, PATH_TESTING_DATA)
 
 # RunTraining()
 
 
-
-
-for i in range(50):
-    RunModel('./output/img/temp/img_[' + str(i) + '.].png', './output/img/output_cnn_' + str(i) + '.png')
-
-# make model simpler
-# dont rotate or skew too much at first
+# for i in range(50):
+#     RunModel('./output/img/temp/img_[' + str(i) + '.].png', './output/img/output_cnn_' + str(i) + '.png')
