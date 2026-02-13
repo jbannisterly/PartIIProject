@@ -213,7 +213,7 @@ def ModelTrain(iterations: int, modelPath: str, model: CNN):
     return losses
             
 
-def ModelTest(modelPath: str):
+def ModelTest(modelPath: str, model: CNN):
     if os.path.exists(modelPath):
         model.load_state_dict(torch.load(modelPath))
 
@@ -279,31 +279,41 @@ def InitialiseData(n0: int, n1: int, imgPath: str, solPath: str):
 # InitialiseData(10, 10, PATH_IMG_TRAIN, PATH_TRAINING_DATA)
 # InitialiseData(10, 10, PATH_IMG_TEST, PATH_TESTING_DATA)
 
+def BatchTest():
 
-convolve0 = [4, 16, 32]
-kernel0 = [3]
-kernel1 = [3, 5]
-convolve1 = [4, 16, 32]
-linear0 = [8, 16, 32, 64]
-linear1 = [8, 16, 32, 64]
-pool0 = [4, 8]
-pool1 = [8]
+    convolve0 = [4, 16, 32]
+    kernel0 = [3]
+    kernel1 = [3, 5]
+    convolve1 = [4, 16, 32]
+    linear0 = [8, 16, 64]
+    linear1 = [4, 16, 64]
+    pool0 = [4, 8]
+    pool1 = [8]
 
-for c0 in convolve0:
-    for k0 in kernel0:
-        for c1 in convolve1:
-            for k1 in kernel1:
-                for l0 in linear0:
-                    for l1 in linear1:
-                        for p0 in pool0:
-                            for p1 in pool1:
-                                model = CNN(CreateModules([c0, c1], [k0, k1], [p0, p1], [l0, l1])).to('cpu')
-                                model_id = '_'.join([str(c0), str(c1), str(k0), str(k1), str(p0), str(p1), str(l0), str(l1)])  
-                                train_error = ModelTrain(50, PATH_MODEL_SAVE + 'model_' + model_id, model)
-                                test_error = ModelTest(PATH_MODEL_SAVE + 'model_' + model_id)
-                                results = {}
-                                results['train'] = train_error
-                                results['test'] = test_error
+    for c1 in convolve1:
+        for k1 in kernel1:
+            for l0 in linear0:
+                for l1 in linear1:
+                    for p0 in pool0:
+                        for p1 in pool1:
+                            for c0 in convolve0:
+                                    for k0 in kernel0:
 
-                                with open(PATH_MODEL_SAVE + 'results_' + model_id, 'w') as resultsFile:
-                                    json.dump(results, resultsFile)
+                                        model_id = '_'.join([str(c0), str(c1), str(k0), str(k1), str(p0), str(p1), str(l0), str(l1)])  
+                                        
+                                        if (not os.path.exists(PATH_MODEL_SAVE + 'model_' + model_id)
+                                            and not os.path.exists(PATH_MODEL_SAVE + 'results_' + model_id)):
+                                            model = CNN(CreateModules([c0, c1], [k0, k1], [p0, p1], [l0, l1])).to('cpu')
+                                            train_error = ModelTrain(50, PATH_MODEL_SAVE + 'model_' + model_id, model)
+                                            test_error = ModelTest(PATH_MODEL_SAVE + 'model_' + model_id, model)
+                                            results = {}
+                                            results['train'] = train_error
+                                            results['test'] = test_error
+
+                                            with open(PATH_MODEL_SAVE + 'results_' + model_id, 'w') as resultsFile:
+                                                json.dump(results, resultsFile)
+                                            
+                                        else:
+                                            print('skipping' + model_id)
+
+BatchTest()
