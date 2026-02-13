@@ -76,8 +76,8 @@ class CNN(torch.nn.Module):
         )
 
     def forward(self, x):
-        print("forward begins")
-        print(x.shape)
+        # print("forward begins")
+        # print(x.shape)
         x = self.net(x)
         return x
     
@@ -96,13 +96,13 @@ def GetModules():
         torch.nn.Linear(16, 2)
     ]
 
-def CreateModules(convSizes, poolSizes, linearSizes):
+def CreateModules(convSizes, kernelSizes, poolSizes, linearSizes):
     module = []
     imageChannels = 3
     imageWidth = 512
 
-    for (conv,pool) in (convSizes, poolSizes):
-        module += [torch.nn.Conv2d(imageChannels, conv, 3, padding='same')]
+    for (conv, kern, pool) in zip(convSizes, kernelSizes, poolSizes):
+        module += [torch.nn.Conv2d(imageChannels, conv, kern, padding='same')]
         module += [torch.nn.MaxPool2d((pool, pool))]
         imageChannels = conv
         imageWidth /= pool
@@ -112,7 +112,7 @@ def CreateModules(convSizes, poolSizes, linearSizes):
 
     for linear in linearSizes:
         module += [torch.nn.Linear(int(networkWidth), int(linear))]
-        module += [torch.nn.BatchNorm1d(int(networkWidth))]
+        module += [torch.nn.BatchNorm1d(int(linear))]
         module += [torch.nn.ReLU()]
         networkWidth = linear
 
@@ -191,10 +191,11 @@ def LoadImages(solutionPath: str, imagePath: str):
 
 
 
-def ModelTrain(iterations: int, modelPath: str):
-    optimiser = torch.optim.Adam(model.parameters(), 0.01)
+def ModelTrain(iterations: int, modelPath: str, model: CNN):
+    optimiser = torch.optim.SGD(model.parameters(), 0.01)
     lossFn = torch.nn.MSELoss()
     solutions = []
+    losses = []
 
     datas, solutions = LoadImages(PATH_TRAINING_DATA, PATH_IMG_TRAIN)
 
@@ -202,39 +203,43 @@ def ModelTrain(iterations: int, modelPath: str):
         loss = train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
         # for param in model.parameters():
         #     print(param)
-        print(str(loss) + ' ' + str(PixelError(loss)))
+        # print(str(loss) + ' ' + str(PixelError(loss)))
+        losses.append(loss)
 
     if not os.path.exists(os.path.dirname(modelPath)):
         os.mkdir(os.path.dirname(modelPath))
     torch.save(model.state_dict(), modelPath)
 
+    return losses
             
 
 def ModelTest(modelPath: str):
     if os.path.exists(modelPath):
         model.load_state_dict(torch.load(modelPath))
 
-        print('------')
-        for param in model.parameters():
-            print(param.shape)
-            print(param)
-        print('------')
+        # print('------')
+        # for param in model.parameters():
+        #     print(param.shape)
+        #     print(param)
+        # print('------')
 
 
         datas, solutions = LoadImages(PATH_TESTING_DATA, PATH_IMG_TEST)
 
-        error = 0
+        error : torch.Tensor = 0
 
         for data,solution in zip(datas,solutions):
-            print(data.shape)
+            # print(data.shape)
             prediction = ModelPredict(model, data)
-            print(str(prediction) + ' ' + str(solution))
+            # print(str(prediction) + ' ' + str(solution))
             error += (prediction[0] - solution[0]) ** 2 + (prediction[1] - solution[1]) ** 2
         error /= len(datas)
         
 
-        print('final error ' + str(error))
-        print('final error pixels ' + str(PixelError(error)))
+        # print('final error ' + str(error))
+        # print('final error pixels ' + str(PixelError(error)))
+        print(error)
+    return float(error.detach())
 
 
 def ModelPredict(model: CNN, data: torch.Tensor):
@@ -270,11 +275,35 @@ def InitialiseData(n0: int, n1: int, imgPath: str, solPath: str):
 
 
 
-model = CNN(CreateModules([16, 32], [4, 8], [16, 16])).to('cpu')
-model = CNN(GetModules())
 
 # InitialiseData(10, 10, PATH_IMG_TRAIN, PATH_TRAINING_DATA)
 # InitialiseData(10, 10, PATH_IMG_TEST, PATH_TESTING_DATA)
 
-ModelTrain(30, PATH_MODEL_SAVE + 'model')
-ModelTest(PATH_MODEL_SAVE + 'model')
+
+convolve0 = [4, 16, 32]
+kernel0 = [3]
+kernel1 = [3, 5]
+convolve1 = [4, 16, 32]
+linear0 = [8, 16, 32, 64]
+linear1 = [8, 16, 32, 64]
+pool0 = [4, 8]
+pool1 = [8]
+
+for c0 in convolve0:
+    for k0 in kernel0:
+        for c1 in convolve1:
+            for k1 in kernel1:
+                for l0 in linear0:
+                    for l1 in linear1:
+                        for p0 in pool0:
+                            for p1 in pool1:
+                                model = CNN(CreateModules([c0, c1], [k0, k1], [p0, p1], [l0, l1])).to('cpu')
+                                model_id = '_'.join([str(c0), str(c1), str(k0), str(k1), str(p0), str(p1), str(l0), str(l1)])  
+                                train_error = ModelTrain(50, PATH_MODEL_SAVE + 'model_' + model_id, model)
+                                test_error = ModelTest(PATH_MODEL_SAVE + 'model_' + model_id)
+                                results = {}
+                                results['train'] = train_error
+                                results['test'] = test_error
+
+                                with open(PATH_MODEL_SAVE + 'results_' + model_id, 'w') as resultsFile:
+                                    json.dump(results, resultsFile)
