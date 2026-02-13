@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import noise
 import subprocess
-import os.path
+import os
 import json
 
 PATH_IMG_TRAIN = "output/cnn/training_data/img/"
@@ -11,6 +11,7 @@ PATH_IMG_TEST = "output/cnn/testing_data/img/"
 PATH_IMG_TEMP = "output/cnn/training_data/img_temp"
 PATH_TRAINING_DATA = "output/cnn/training_data/targets"
 PATH_TESTING_DATA = "output/cnn/testing_data/targets"
+PATH_MODEL_SAVE = "output/cnn/models/"
 
 class Distorter():
 
@@ -68,19 +69,10 @@ class Distorter():
 
 
 class CNN(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, modules: torch.nn.Module):
         super().__init__()
         self.net = torch.nn.Sequential(
-            torch.nn.Conv2d(3,16,3, padding='same'),
-            torch.nn.MaxPool2d((4,4)),
-            torch.nn.Conv2d(16,32,3, padding='same'),
-            torch.nn.MaxPool2d((4,4)),
-            torch.nn.Flatten(),
-            torch.nn.Linear(32*32*32, 16),
-            torch.nn.ReLU(),
-            torch.nn.Linear(16, 16),
-            torch.nn.ReLU(),
-            torch.nn.Linear(16, 2)
+            *modules
         )
 
     def forward(self, x):
@@ -89,6 +81,51 @@ class CNN(torch.nn.Module):
         x = self.net(x)
         return x
     
+
+def GetModules():
+    return [
+        torch.nn.Conv2d(3,16,3, padding='same'),
+        torch.nn.MaxPool2d((4,4)),
+        torch.nn.Conv2d(16,32,3, padding='same'),
+        torch.nn.MaxPool2d((4,4)),
+        torch.nn.Flatten(),
+        torch.nn.Linear(32*32*32, 16),
+        torch.nn.ReLU(),
+        torch.nn.Linear(16, 16),
+        torch.nn.ReLU(),
+        torch.nn.Linear(16, 2)
+    ]
+
+def CreateModules(convSizes, poolSizes, linearSizes):
+    module = []
+    imageChannels = 3
+    imageWidth = 512
+
+    for (conv,pool) in (convSizes, poolSizes):
+        module += [torch.nn.Conv2d(imageChannels, conv, 3, padding='same')]
+        module += [torch.nn.MaxPool2d((pool, pool))]
+        imageChannels = conv
+        imageWidth /= pool
+
+    networkWidth = imageWidth * imageWidth * imageChannels
+    module += [torch.nn.Flatten()]
+
+    for linear in linearSizes:
+        module += [torch.nn.Linear(int(networkWidth), int(linear))]
+        module += [torch.nn.BatchNorm1d(int(networkWidth))]
+        module += [torch.nn.ReLU()]
+        networkWidth = linear
+
+    module += [torch.nn.Linear(networkWidth, 2)]
+    
+    return module
+
+
+
+def PixelError(lossResult):
+    return np.sqrt(lossResult) * 512
+
+
 def GenImage(ids, savePath):
     for id in ids:
         randomData = np.random.random(10000)
@@ -109,10 +146,11 @@ def GetDistorted(id, distorter: Distorter):
     return distorted,np.float32(finder_centre / 1024)
 
 
-def GetImage(id):
-    data = cv2.imread('output/img/cnn/img_' + str(id) + '.png')
-    data = cv2.resize(data, (1024, 1024))
-    data = np.swapaxes(data, 2, 0)
+def PrepareImage(path):
+    data = cv2.imread(path)
+    data = cv2.resize(data, (512, 512))
+    data = cv2.cvtColor(data, cv2.COLOR_RGB2HSV) / 255
+    data = np.swapaxes(data, 0, 2)
     data = np.float32(data)
     tensorData = torch.tensor(data)
     return tensorData
@@ -128,56 +166,86 @@ def train(model, optimiser, lossFn, target, data):
     loss.backward()
     optimiser.step()
     optimiser.zero_grad()
-    print('pixel error ' + str(int(np.sqrt(loss.item()) * 1024)))
+    return loss.item()
+
+def LoadImages(solutionPath: str, imagePath: str):
+    with open(solutionPath, 'r') as solutionFile:
+        trainingDataInfo = json.load(solutionFile)
+
+    datas = []
+    solutions = []
+
+    for imgName in trainingDataInfo:
+
+        data = PrepareImage(PATH_IMG_TRAIN + imgName + '.png')
+        datas += [data]
+
+        solutionLocation = trainingDataInfo[imgName]
+        solutions += [[float(solutionLocation['x']), float(solutionLocation['y'])]]
+
+    print('loaded images')
+
+    solutions = np.float32(solutions) * 2
+    return datas, solutions
 
 
-def RunTraining():
-    optimiser = torch.optim.SGD(model.parameters(), 0.001)
+
+
+def ModelTrain(iterations: int, modelPath: str):
+    optimiser = torch.optim.Adam(model.parameters(), 0.01)
     lossFn = torch.nn.MSELoss()
     solutions = []
 
-    with open(PATH_TRAINING_DATA, 'r') as solutionFile:
-        trainingDataInfo = json.load(solutionFile)
+    datas, solutions = LoadImages(PATH_TRAINING_DATA, PATH_IMG_TRAIN)
 
-    while True:
+    for i in range(iterations):
+        loss = train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
+        # for param in model.parameters():
+        #     print(param)
+        print(str(loss) + ' ' + str(PixelError(loss)))
 
-        datas = []
-        
-        for imgName in trainingDataInfo:
+    if not os.path.exists(os.path.dirname(modelPath)):
+        os.mkdir(os.path.dirname(modelPath))
+    torch.save(model.state_dict(), modelPath)
 
-            data = cv2.imread(PATH_IMG_TRAIN + imgName + '.png')
-            data = cv2.cvtColor(data, cv2.COLOR_RGB2HSV) / 255
-            data = np.swapaxes(data, 0, 2)
-            datas += [torch.tensor(data)]
-
-            solutionLocation = trainingDataInfo[imgName]
-            solutions += [[float(solutionLocation['x']), float(solutionLocation['y'])]]
-
-        while True:
             
-            # if os.path.exists(modelSavePath):
-            #     model.load_state_dict(torch.load(modelSavePath))
-            train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
-            # torch.save(model.state_dict(), modelSavePath)
 
-def RunModel(path, outputPath):
-    data = cv2.imread(path)
-    if os.path.exists(modelSavePath):
-        model.load_state_dict(torch.load(modelSavePath))
+def ModelTest(modelPath: str):
+    if os.path.exists(modelPath):
+        model.load_state_dict(torch.load(modelPath))
+
+        print('------')
+        for param in model.parameters():
+            print(param.shape)
+            print(param)
+        print('------')
+
+
+        datas, solutions = LoadImages(PATH_TESTING_DATA, PATH_IMG_TEST)
+
+        error = 0
+
+        for data,solution in zip(datas,solutions):
+            print(data.shape)
+            prediction = ModelPredict(model, data)
+            print(str(prediction) + ' ' + str(solution))
+            error += (prediction[0] - solution[0]) ** 2 + (prediction[1] - solution[1]) ** 2
+        error /= len(datas)
+        
+
+        print('final error ' + str(error))
+        print('final error pixels ' + str(PixelError(error)))
+
+
+def ModelPredict(model: CNN, data: torch.Tensor):
     model.eval()
-
-    data = data.swapaxes(0,2)
-    dataTensor = torch.tensor(np.float32(data)).unsqueeze(0)
+    
     with torch.no_grad():
-        output = model(dataTensor)
-    proj_from = np.float32(output[0]).reshape((4,2)) * 1024
-    proj_to = np.float32([[0,0],[200, 0], [0, 200], [200, 200]])
-    transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)
-    proj = np.float32(cv2.warpPerspective(cv2.imread(path), transform_matrix, (200, 200)))
+        output: torch.Tensor = model(data[None, :, :, :])
 
-    cv2.imwrite(outputPath, proj)
+    return output[0]
 
-def InitialiseData(n0, n1, imgPath, solPath):
+def InitialiseData(n0: int, n1: int, imgPath: str, solPath: str):
     solutions = {}
     distorter = Distorter()
 
@@ -202,14 +270,11 @@ def InitialiseData(n0, n1, imgPath, solPath):
 
 
 
-model = CNN().to('cpu')
-modelSavePath = './src/python/model_save'
+model = CNN(CreateModules([16, 32], [4, 8], [16, 16])).to('cpu')
+model = CNN(GetModules())
 
-InitialiseData(10, 10, PATH_IMG_TRAIN, PATH_TRAINING_DATA)
-InitialiseData(10, 10, PATH_IMG_TEST, PATH_TESTING_DATA)
+# InitialiseData(10, 10, PATH_IMG_TRAIN, PATH_TRAINING_DATA)
+# InitialiseData(10, 10, PATH_IMG_TEST, PATH_TESTING_DATA)
 
-# RunTraining()
-
-
-# for i in range(50):
-#     RunModel('./output/img/temp/img_[' + str(i) + '.].png', './output/img/output_cnn_' + str(i) + '.png')
+ModelTrain(30, PATH_MODEL_SAVE + 'model')
+ModelTest(PATH_MODEL_SAVE + 'model')
