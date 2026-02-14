@@ -28,7 +28,7 @@ std::vector<uint8_t> ShufflePixels(std::vector<uint8_t> &pixels, std::vector<int
     std::vector<uint8_t> shuffled;
     shuffled.resize(permutation.size() * 3, 0);
     
-    for (int i = 0; i < pixels.size(); i++) {
+    for (int i = 0; i < permutation.size(); i++) {
         int index = permutation[i];
         for (int j = 0; j < 3; j++) {
             shuffled[index * 3 + j] = pixels[i * 3 + j];
