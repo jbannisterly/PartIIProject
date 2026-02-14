@@ -79,7 +79,11 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
         targetCounter++;
     }
 
-    return BarcodeImageEditor::Scale(layout.data, scale, layout.barcodeWidth);
+    std::vector<uint8_t> scaledData = BarcodeImageEditor::Scale(layout.data, scale, layout.barcodeWidth);
+
+    BarcodeImageEditor::DrawCircle(scaledData, scale * layout.barcodeWidth, 10, 10, 5, 127);
+
+    return scaledData;
 }
 
 std::vector<uint8_t> BarcodeWriter::BarcodeToPixels(std::vector<uint8_t> barcode, int barcodeSize){
