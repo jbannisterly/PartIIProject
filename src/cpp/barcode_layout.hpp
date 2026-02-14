@@ -8,6 +8,7 @@
 struct BarcodeLayout{
     std::vector<uint8_t> data;
     std::vector<uint8_t> mask;
+    int barcodeWidth;
     
     int GetDataSize() {
         int size = 0;

@@ -39,6 +39,8 @@ BarcodeLayout GetBarcode3(){
         DrawSquare(barcode, 0, posX[i] + 2 * FINDER_SIZE, posY[i] + 2 * FINDER_SIZE, BARCODE_WIDTH, 3 * FINDER_SIZE, 3 * FINDER_SIZE);
     }
 
+    barcode.barcodeWidth = BARCODE_WIDTH;
+
     return barcode;
 }
 
@@ -48,6 +50,8 @@ BarcodeLayout GetBarcode4Simple() {
     DrawSquare(barcode, 255, BARCODE_WIDTH - 9, BARCODE_HEIGHT - 9, BARCODE_WIDTH, 7, 7);
     DrawSquare(barcode, 0, BARCODE_WIDTH - 8, BARCODE_HEIGHT - 8, BARCODE_WIDTH, 5, 5);
     DrawSquare(barcode, 255, BARCODE_WIDTH - 7, BARCODE_HEIGHT - 7, BARCODE_WIDTH, 3, 3);
+
+    barcode.barcodeWidth = BARCODE_WIDTH;
 
     return barcode;
 }
@@ -59,6 +63,8 @@ BarcodeLayout GetBarcode4Detailed() {
     DrawSquare(barcode, 255, BARCODE_WIDTH - 8 * FINDER_SIZE, BARCODE_HEIGHT - 8 * FINDER_SIZE, BARCODE_WIDTH, 7 * FINDER_SIZE, 7 * FINDER_SIZE);
     DrawSquare(barcode, 0, BARCODE_WIDTH - 7 * FINDER_SIZE, BARCODE_HEIGHT - 7 * FINDER_SIZE, BARCODE_WIDTH, 5 * FINDER_SIZE, 5 * FINDER_SIZE);
     DrawSquare(barcode, 255, BARCODE_WIDTH - 6 * FINDER_SIZE, BARCODE_HEIGHT - 6 * FINDER_SIZE, BARCODE_WIDTH, 3 * FINDER_SIZE, 3 * FINDER_SIZE);
+
+    barcode.barcodeWidth = BARCODE_WIDTH;
 
     return barcode;
 }

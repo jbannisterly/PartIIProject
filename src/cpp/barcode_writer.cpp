@@ -1,4 +1,5 @@
 #include "barcode_writer.hpp"
+#include "barcode_image_editor.hpp"
 #include <random>
 #include <iostream>
 
@@ -51,7 +52,7 @@ std::vector<uint8_t> DeShufflePixels(std::vector<uint8_t> &shuffled, std::vector
 }
 
 
-std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels){
+std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels, int scale){
     BarcodeLayout layout = templateLayout;
     int capacity = layout.GetDataSize();
     std::vector<int> permutation = RandomPermutation(capacity, 0);
@@ -78,9 +79,7 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
         targetCounter++;
     }
 
-
-
-    return layout.data;
+    return BarcodeImageEditor::Scale(layout.data, scale, layout.barcodeWidth);
 }
 
 std::vector<uint8_t> BarcodeWriter::BarcodeToPixels(std::vector<uint8_t> barcode, int barcodeSize){

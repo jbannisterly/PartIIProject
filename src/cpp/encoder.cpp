@@ -50,9 +50,11 @@ int main(int argc, char *argv[]){
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(errorSplitData);
 
     BarcodeWriter writer(GetBarcode4Detailed());
-    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData);
+    int scale = 4;
+    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, scale);
+    std::cout << imageData.size() << std::endl;
 
-    Mat image(BARCODE_HEIGHT, BARCODE_WIDTH, CV_8UC3, imageData.data());
+    Mat image(BARCODE_HEIGHT * scale, BARCODE_WIDTH * scale, CV_8UC3, imageData.data());
 
     imwrite(outputPath.c_str(), image);
 }
