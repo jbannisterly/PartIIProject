@@ -49,8 +49,8 @@ int main(int argc, char *argv[]){
 
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(errorSplitData);
 
-    BarcodeWriter writer(GetBarcode4Detailed());
-    int scale = 4;
+    BarcodeWriter writer(GetBarcode4Circle());
+    int scale = 8;
     std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, scale);
     std::cout << imageData.size() << std::endl;
 

@@ -2,6 +2,7 @@
 #include "barcode_image_editor.hpp"
 #include <random>
 #include <iostream>
+#include <array>
 
 std::vector<int> RandomPermutation(int size, int seed) {
     std::vector<int> data;
@@ -51,6 +52,13 @@ std::vector<uint8_t> DeShufflePixels(std::vector<uint8_t> &shuffled, std::vector
     return pixels;
 }
 
+void DrawRings(std::vector<uint8_t> &scaledData, double positionX, double positionY, int barcodeWidth, int scale, bool invertColours=false) {
+    std::array<uint8_t, 3> colours = {0, 255, 0};
+    if (invertColours) colours = {255, 0, 255};
+    BarcodeImageEditor::DrawCircle(scaledData, scale * barcodeWidth, positionX * scale, positionY * scale, 3.5 * scale, colours[0]);
+    BarcodeImageEditor::DrawCircle(scaledData, scale * barcodeWidth, positionX * scale, positionY * scale, 2.5 * scale, colours[1]);
+    BarcodeImageEditor::DrawCircle(scaledData, scale * barcodeWidth, positionX * scale, positionY * scale, 1.5 * scale, colours[2]);
+}
 
 std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels, int scale){
     BarcodeLayout layout = templateLayout;
@@ -81,7 +89,11 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
 
     std::vector<uint8_t> scaledData = BarcodeImageEditor::Scale(layout.data, scale, layout.barcodeWidth);
 
-    BarcodeImageEditor::DrawCircle(scaledData, scale * layout.barcodeWidth, 10, 10, 5, 127);
+    DrawRings(scaledData, 4.5, 4.5, layout.barcodeWidth, scale);
+    DrawRings(scaledData, layout.barcodeWidth - 4.5, 4.5, layout.barcodeWidth, scale);
+    DrawRings(scaledData, 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale);
+    DrawRings(scaledData, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale, true);
+
 
     return scaledData;
 }

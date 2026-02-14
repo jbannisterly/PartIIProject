@@ -21,8 +21,8 @@ std::vector<uint8_t> BarcodeImageEditor::Scale(std::vector<uint8_t> &data, int s
 
 void BarcodeImageEditor::DrawCircle(std::vector<uint8_t> &data, int barcodeWidth, double circleCentreX, double circleCentreY, double circleRadius, uint8_t colour) {
 
-    for (int i = circleCentreY - circleRadius; i < circleCentreY + circleRadius; i++) {
-        for (int j = circleCentreX - circleRadius; j < circleCentreX + circleCentreX; j++) {
+    for (int i = circleCentreY - circleRadius - 1; i < circleCentreY + circleRadius; i++) {
+        for (int j = circleCentreX - circleRadius - 1; j < circleCentreX + circleCentreX; j++) {
             if ((i - circleCentreY) * (i - circleCentreY) + (j - circleCentreX) * (j - circleCentreX) < circleRadius * circleRadius) {
                 for (int k = 0; k < 3; k++) {
                     data[(i * barcodeWidth + j) * 3 + k] = colour;

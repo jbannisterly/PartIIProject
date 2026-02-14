@@ -69,6 +69,24 @@ BarcodeLayout GetBarcode4Detailed() {
     return barcode;
 }
 
+BarcodeLayout GetBarcode4Circle() {
+    BarcodeLayout barcode = GetBarcode4Detailed();
+
+    int posX[4] = {FINDER_SIZE, BARCODE_WIDTH - 8 * FINDER_SIZE, FINDER_SIZE, BARCODE_WIDTH - 8 * FINDER_SIZE};
+    int posY[4] = {FINDER_SIZE, FINDER_SIZE, BARCODE_HEIGHT - 8 * FINDER_SIZE, BARCODE_HEIGHT - 8 * FINDER_SIZE};
+
+
+    DrawSquare(barcode, 255, 1, 1, BARCODE_WIDTH, 8 * FINDER_SIZE, 8 * FINDER_SIZE);
+    DrawSquare(barcode, 255, BARCODE_WIDTH - 8 * FINDER_SIZE - 1, 1, BARCODE_WIDTH, 8 * FINDER_SIZE, 8 * FINDER_SIZE);
+    DrawSquare(barcode, 255, 1, BARCODE_HEIGHT - 8 * FINDER_SIZE - 1, BARCODE_WIDTH, 8 * FINDER_SIZE, 8 * FINDER_SIZE);
+    DrawSquare(barcode, 0, BARCODE_WIDTH - 9 * FINDER_SIZE, BARCODE_HEIGHT - 9 * FINDER_SIZE, BARCODE_WIDTH, 9 * FINDER_SIZE, 9 * FINDER_SIZE);
+
+
+    barcode.barcodeWidth = BARCODE_WIDTH;
+
+    return barcode;
+}
+
 int GetCapacity(BarcodeLayout barcode) {
     int capacity = 0;
 

@@ -26,5 +26,6 @@ struct BarcodeLayout{
 BarcodeLayout GetBarcode3();
 BarcodeLayout GetBarcode4Simple();
 BarcodeLayout GetBarcode4Detailed();
+BarcodeLayout GetBarcode4Circle();
 
 int GetCapacity(BarcodeLayout barcode);
