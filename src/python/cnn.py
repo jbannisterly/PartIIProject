@@ -6,12 +6,12 @@ import subprocess
 import os
 import json
 
-PATH_IMG_TRAIN = "output/cnn/training_data/img/"
-PATH_IMG_TEST = "output/cnn/testing_data/img/"
-PATH_IMG_TEMP = "output/cnn/training_data/img_temp"
-PATH_TRAINING_DATA = "output/cnn/training_data/targets"
-PATH_TESTING_DATA = "output/cnn/testing_data/targets"
-PATH_MODEL_SAVE = "output/cnn/models/"
+PATH_IMG_TRAIN = "output/cnn/training_data/img_circle/"
+PATH_IMG_TEST = "output/cnn/testing_data/img_circle/"
+PATH_IMG_TEMP = "output/cnn/training_data/img_temp_circle/"
+PATH_TRAINING_DATA = "output/cnn/training_data/targets_circle"
+PATH_TESTING_DATA = "output/cnn/testing_data/targets_circle"
+PATH_MODEL_SAVE = "output/cnn/models_circle/"
 
 class Distorter():
 
@@ -129,10 +129,11 @@ def PixelError(lossResult):
 def GenImage(ids, savePath):
     for id in ids:
         randomData = np.random.random(10000)
-        subprocess.Popen(['./output/bin/Encoder', "' ".join(str(x) for x in randomData[:1200]) + "'", savePath + str(id) + '.png'])
+        subprocess.call(['./output/bin/Encoder', "' ".join(str(x) for x in randomData[:1200]) + "'", savePath + "img_" + str(id) + '.png'])
 
-def GetDistorted(id, distorter: Distorter):
-    path = 'output/img/cnn/img_raw_' + str(id) + '.png'
+
+def GetDistorted(id, distorter: Distorter, savePath: str):
+    path = savePath + "img_" + str(id) + '.png'
     theta = np.random.uniform(size=1) * 0.5 - 0.25
     magnitude = np.random.uniform(size=1) * 100 + 600
     delta = [np.cos(theta[0]) * magnitude[0], np.sin(theta[0]) * magnitude[0]]
@@ -203,7 +204,7 @@ def ModelTrain(iterations: int, modelPath: str, model: CNN):
         loss = train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
         # for param in model.parameters():
         #     print(param)
-        # print(str(loss) + ' ' + str(PixelError(loss)))
+        print(str(loss) + ' ' + str(PixelError(loss)))
         losses.append(loss)
 
     if not os.path.exists(os.path.dirname(modelPath)):
@@ -258,7 +259,7 @@ def InitialiseData(n0: int, n1: int, imgPath: str, solPath: str):
     
     for i in range(n0):
         for j in range(n1):
-            data,solution = GetDistorted(j, distorter)
+            data,solution = GetDistorted(j, distorter, PATH_IMG_TEMP)
             (sizeX, sizeY, sizeC) = data.shape
             data = data[:int(sizeX/2), :int(sizeY/2), :]
             print("writing")
@@ -276,8 +277,10 @@ def InitialiseData(n0: int, n1: int, imgPath: str, solPath: str):
 
 
 
-# InitialiseData(10, 10, PATH_IMG_TRAIN, PATH_TRAINING_DATA)
+# InitialiseData(30, 10, PATH_IMG_TRAIN, PATH_TRAINING_DATA)
 # InitialiseData(10, 10, PATH_IMG_TEST, PATH_TESTING_DATA)
+
+
 
 def BatchTest():
 
@@ -286,7 +289,7 @@ def BatchTest():
     kernel1 = [3, 5]
     convolve1 = [4, 16, 32]
     linear0 = [8, 16, 64]
-    linear1 = [4, 16, 64]
+    linear1 = [64, 128]
     pool0 = [4, 8]
     pool1 = [8]
 
@@ -316,4 +319,17 @@ def BatchTest():
                                         else:
                                             print('skipping' + model_id)
 
-BatchTest()
+def SingleTest(convSizes, kernelSizes, poolSizes, linearSizes):
+    model_id = str(convSizes + kernelSizes + poolSizes + linearSizes)[1:-1].replace(', ', '_') + '_300' + 'quicksgd'
+    print(model_id)  
+    model = CNN(CreateModules(convSizes, kernelSizes, poolSizes, linearSizes)).to('cpu')
+    train_error = ModelTrain(20, PATH_MODEL_SAVE + 'model_' + model_id, model)
+    test_error = ModelTest(PATH_MODEL_SAVE + 'model_' + model_id, model)
+    results = {}
+    results['train'] = train_error
+    results['test'] = test_error
+    
+    with open(PATH_MODEL_SAVE + 'results_' + model_id, 'w') as resultsFile:
+        json.dump(results, resultsFile)
+
+SingleTest([4, 32], [3, 3], [8, 8], [8, 64])
