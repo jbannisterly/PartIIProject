@@ -79,7 +79,28 @@ class CNN(torch.nn.Module):
         # print("forward begins")
         # print(x.shape)
         x = self.net(x)
-        return x
+
+        n,c,y_size,x_size = x.shape
+
+        x_lin = np.linspace(0, 1, x_size)
+        y_lin = np.linspace(0, 1, y_size)
+
+        y_matrix = torch.Tensor(np.repeat(y_lin[:, np.newaxis], x_size, axis=1)[:, :])
+        x_matrix = torch.Tensor(np.repeat(x_lin[np.newaxis, :], y_size, axis=0)[:, :])
+        norm_matrix = torch.ones((c, y_size, x_size))
+
+        predictions = torch.empty((n, 2))
+
+        for i,sample in enumerate(x):
+            channel = sample[0]
+            x_pred = torch.sum(torch.mul(channel,x_matrix))
+            y_pred = torch.sum(torch.mul(channel,y_matrix))
+            normalisation = torch.sum(channel)
+
+            predictions[i][0] = x_pred / normalisation
+            predictions[i][1] = y_pred / normalisation
+
+        return predictions
     
 
 def GetModules():
@@ -96,27 +117,18 @@ def GetModules():
         torch.nn.Linear(16, 2)
     ]
 
-def CreateModules(convSizes, kernelSizes, poolSizes, linearSizes):
+def CreateModules(convSizes, kernelSizes, poolSizes):
     module = []
     imageChannels = 3
     imageWidth = 512
 
     for (conv, kern, pool) in zip(convSizes, kernelSizes, poolSizes):
         module += [torch.nn.Conv2d(imageChannels, conv, kern, padding='same')]
-        module += [torch.nn.MaxPool2d((pool, pool))]
+        # module += [torch.nn.MaxPool2d((pool, pool))]
         imageChannels = conv
-        imageWidth /= pool
+        # imageWidth /= pool
 
-    networkWidth = imageWidth * imageWidth * imageChannels
-    module += [torch.nn.Flatten()]
-
-    for linear in linearSizes:
-        module += [torch.nn.Linear(int(networkWidth), int(linear))]
-        module += [torch.nn.BatchNorm1d(int(linear))]
-        module += [torch.nn.ReLU()]
-        networkWidth = linear
-
-    module += [torch.nn.Linear(networkWidth, 2)]
+    module += [torch.nn.Conv2d(imageChannels, 1, 3, padding='same')]
     
     return module
 
@@ -169,7 +181,7 @@ def train(model, optimiser, lossFn, target, data):
     optimiser.zero_grad()
     return loss.item()
 
-def LoadImages(solutionPath: str, imagePath: str):
+def LoadImages(solutionPath: str, imagePath: str, max: int=10000):
     with open(solutionPath, 'r') as solutionFile:
         trainingDataInfo = json.load(solutionFile)
 
@@ -177,12 +189,15 @@ def LoadImages(solutionPath: str, imagePath: str):
     solutions = []
 
     for imgName in trainingDataInfo:
+        if max > 0:
 
-        data = PrepareImage(PATH_IMG_TRAIN + imgName + '.png')
-        datas += [data]
+            data = PrepareImage(PATH_IMG_TRAIN + imgName + '.png')
+            datas += [data]
 
-        solutionLocation = trainingDataInfo[imgName]
-        solutions += [[float(solutionLocation['x']), float(solutionLocation['y'])]]
+            solutionLocation = trainingDataInfo[imgName]
+            solutions += [[float(solutionLocation['x']), float(solutionLocation['y'])]]
+
+        max -= 1
 
     print('loaded images')
 
@@ -198,7 +213,7 @@ def ModelTrain(iterations: int, modelPath: str, model: CNN):
     solutions = []
     losses = []
 
-    datas, solutions = LoadImages(PATH_TRAINING_DATA, PATH_IMG_TRAIN)
+    datas, solutions = LoadImages(PATH_TRAINING_DATA, PATH_IMG_TRAIN, 20)
 
     for i in range(iterations):
         loss = train(model, optimiser, lossFn, torch.tensor(solutions), np.array(datas))
@@ -218,27 +233,15 @@ def ModelTest(modelPath: str, model: CNN):
     if os.path.exists(modelPath):
         model.load_state_dict(torch.load(modelPath))
 
-        # print('------')
-        # for param in model.parameters():
-        #     print(param.shape)
-        #     print(param)
-        # print('------')
-
-
         datas, solutions = LoadImages(PATH_TESTING_DATA, PATH_IMG_TEST)
 
         error : torch.Tensor = 0
 
         for data,solution in zip(datas,solutions):
-            # print(data.shape)
             prediction = ModelPredict(model, data)
-            # print(str(prediction) + ' ' + str(solution))
             error += (prediction[0] - solution[0]) ** 2 + (prediction[1] - solution[1]) ** 2
         error /= len(datas)
         
-
-        # print('final error ' + str(error))
-        # print('final error pixels ' + str(PixelError(error)))
         print(error)
     return float(error.detach())
 
@@ -319,10 +322,10 @@ def BatchTest():
                                         else:
                                             print('skipping' + model_id)
 
-def SingleTest(convSizes, kernelSizes, poolSizes, linearSizes):
-    model_id = str(convSizes + kernelSizes + poolSizes + linearSizes)[1:-1].replace(', ', '_') + '_300' + 'quicksgd'
+def SingleTest(convSizes, kernelSizes, poolSizes):
+    model_id = str(convSizes + kernelSizes + poolSizes)[1:-1].replace(', ', '_') + '_alternative_method'
     print(model_id)  
-    model = CNN(CreateModules(convSizes, kernelSizes, poolSizes, linearSizes)).to('cpu')
+    model = CNN(CreateModules(convSizes, kernelSizes, poolSizes)).to('cpu')
     train_error = ModelTrain(20, PATH_MODEL_SAVE + 'model_' + model_id, model)
     test_error = ModelTest(PATH_MODEL_SAVE + 'model_' + model_id, model)
     results = {}
@@ -332,4 +335,4 @@ def SingleTest(convSizes, kernelSizes, poolSizes, linearSizes):
     with open(PATH_MODEL_SAVE + 'results_' + model_id, 'w') as resultsFile:
         json.dump(results, resultsFile)
 
-SingleTest([4, 32], [3, 3], [8, 8], [8, 64])
+SingleTest([4, 32, 32], [3, 11, 13], [8, 8])
