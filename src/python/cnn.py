@@ -93,6 +93,7 @@ class CNN(torch.nn.Module):
 
         for i,sample in enumerate(x):
             channel = sample[0]
+            channel = torch.mul(channel, channel)
             x_pred = torch.sum(torch.mul(channel,x_matrix))
             y_pred = torch.sum(torch.mul(channel,y_matrix))
             normalisation = torch.sum(channel)
@@ -168,7 +169,7 @@ def PrepareImage(path):
     tensorData = torch.tensor(data)
     return tensorData
 
-def train(model, optimiser, lossFn, target, data):
+def train(model: CNN, optimiser, lossFn, target, data):
     model.train()
 
     data = torch.from_numpy(data).float()
@@ -179,6 +180,10 @@ def train(model, optimiser, lossFn, target, data):
     loss.backward()
     optimiser.step()
     optimiser.zero_grad()
+
+    for parameter in model.parameters():
+        print(parameter)
+
     return loss.item()
 
 def LoadImages(solutionPath: str, imagePath: str, max: int=10000):
@@ -232,7 +237,6 @@ def ModelTrain(iterations: int, modelPath: str, model: CNN):
 def ModelTest(modelPath: str, model: CNN):
     if os.path.exists(modelPath):
         model.load_state_dict(torch.load(modelPath))
-
         datas, solutions = LoadImages(PATH_TESTING_DATA, PATH_IMG_TEST)
 
         error : torch.Tensor = 0
@@ -323,7 +327,7 @@ def BatchTest():
                                             print('skipping' + model_id)
 
 def SingleTest(convSizes, kernelSizes, poolSizes):
-    model_id = str(convSizes + kernelSizes + poolSizes)[1:-1].replace(', ', '_') + '_alternative_method'
+    model_id = str(convSizes + kernelSizes + poolSizes)[1:-1].replace(', ', '_') + '_alt_method'
     print(model_id)  
     model = CNN(CreateModules(convSizes, kernelSizes, poolSizes)).to('cpu')
     train_error = ModelTrain(20, PATH_MODEL_SAVE + 'model_' + model_id, model)
@@ -335,4 +339,4 @@ def SingleTest(convSizes, kernelSizes, poolSizes):
     with open(PATH_MODEL_SAVE + 'results_' + model_id, 'w') as resultsFile:
         json.dump(results, resultsFile)
 
-SingleTest([4, 32, 32], [3, 11, 13], [8, 8])
+SingleTest([32, 32, 8], [3, 11, 13], [8, 8])
