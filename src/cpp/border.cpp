@@ -40,13 +40,13 @@ Border::Border GetBorder(std::vector<uint8_t> &threshold, int width, std::vector
         Coord visiting = toVisit[toVisit.size() - 1];
         toVisit.pop_back();
 
-        if (valid[visiting.Index()] && threshold[visiting.Index()] == originalColour) {
-            valid[visiting.Index()] = false;
+        if (valid.at(visiting.Index()) && threshold.at(visiting.Index()) == originalColour) {
+            valid.at(visiting.Index()) = false;
             border.borderMembers.push_back(visiting.Index());
 
-            if (visiting.x < width) toVisit.push_back(Coord(visiting.x + 1, visiting.y, width));
+            if (visiting.x < width - 1) toVisit.push_back(Coord(visiting.x + 1, visiting.y, width));
             if (visiting.x > 0) toVisit.push_back(Coord(visiting.x - 1, visiting.y, width));
-            if (visiting.y < height) toVisit.push_back(Coord(visiting.x, visiting.y + 1, width));
+            if (visiting.y < height - 1) toVisit.push_back(Coord(visiting.x, visiting.y + 1, width));
             if (visiting.y > 0) toVisit.push_back(Coord(visiting.x, visiting.y - 1, width));
         }
     }
