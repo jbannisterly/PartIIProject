@@ -18,7 +18,7 @@
 #include "finder_patterns.hpp"
 #include "pattern_valid.hpp"
 #include "bounding_box.hpp"
-
+#include "border.hpp"
 
 struct AlignmentData {
     std::array<Vec3, 4> bounds;

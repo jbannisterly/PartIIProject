@@ -211,11 +211,13 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
     std::vector<uint8_t> threshold = ImageProcessing::Threshold(grey, inputImage.rows, inputImage.cols);
 
     std::vector<uint8_t> debugBackground(data);
-    // Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
+    Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
-    // if (debugPath != "") {
-    //     imwrite("output/img/output_threshold.png", thresholdImage);
-    // }
+    if (debugPath != "") {
+        imwrite("output/img/output_threshold.png", thresholdImage);
+    }
+
+    Border::GetBorders(threshold, inputImage.cols);
 
     std::vector<FinderCandidate> centres0 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(1, 0, 0)});
     std::vector<FinderCandidate> centres1 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0)});

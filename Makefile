@@ -19,7 +19,7 @@ encoder:
 	./output/bin/Encoder
 
 alignment:
-	g++ -g -o output/bin/Alignment src/cpp/exec_alignment.cpp src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp src/cpp/image_debug.cpp src/cpp/finder_patterns.cpp src/cpp/finder_group.cpp src/cpp/image_processing.cpp src/cpp/pattern_valid.cpp src/cpp/bounding_box.cpp `pkg-config --cflags --libs opencv4`
+	g++ -g -o output/bin/Alignment src/cpp/exec_alignment.cpp src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp src/cpp/image_debug.cpp src/cpp/finder_patterns.cpp src/cpp/finder_group.cpp src/cpp/image_processing.cpp src/cpp/pattern_valid.cpp src/cpp/bounding_box.cpp src/cpp/border.cpp `pkg-config --cflags --libs opencv4`
 	./output/bin/Alignment
 
 l_bounds:
