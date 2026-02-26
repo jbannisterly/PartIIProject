@@ -19,7 +19,7 @@ encoder:
 	./output/bin/Encoder
 
 alignment:
-	g++ -g -fsanitize=address -o output/bin/Alignment src/cpp/exec_alignment.cpp src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp src/cpp/image_debug.cpp src/cpp/finder_patterns.cpp src/cpp/finder_group.cpp src/cpp/image_processing.cpp src/cpp/pattern_valid.cpp src/cpp/bounding_box.cpp src/cpp/border.cpp `pkg-config --cflags --libs opencv4`
+	g++ -g -o output/bin/Alignment src/cpp/exec_alignment.cpp src/cpp/alignment.cpp src/cpp/image_aux.cpp src/cpp/vector_helper.cpp src/cpp/profiling.cpp src/cpp/image_debug.cpp src/cpp/finder_patterns.cpp src/cpp/finder_group.cpp src/cpp/image_processing.cpp src/cpp/pattern_valid.cpp src/cpp/bounding_box.cpp src/cpp/border.cpp `pkg-config --cflags --libs opencv4`
 	./output/bin/Alignment
 
 l_bounds:
@@ -83,5 +83,5 @@ enc_test:
 	./output/bin/EncoderTest
 
 dec_test:
-	g++ -g -w -Ilibs/ -o output/bin/DecoderTest src/cpp/decoder_error_counter.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp src/cpp/random_data_gen.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g -w -Ilibs/ -o output/bin/DecoderTest src/cpp/decoder_error_counter.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp src/cpp/random_data_gen.cpp src/cpp/barcode_image_editor.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/DecoderTest
