@@ -274,9 +274,9 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
     std::vector<uint8_t> debugBorders;
     debugBorders.resize(threshold.size() * 3, 0);
     for (int i = 0; i < borders.size(); i++) {
-        uint8_t r = rand() % 256;
-        uint8_t g = rand() % 256;
-        uint8_t b = rand() % 256;
+        uint8_t r = rand() % 128 + 100;
+        uint8_t g = rand() % 128 + 100;
+        uint8_t b = rand() % 128 + 100;
 
         for (int j = 0; j < borders[i].borderMembers.size(); j++) {
             debugBorders[borders[i].borderMembers[j] * 3] = r;

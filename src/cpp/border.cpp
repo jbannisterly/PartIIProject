@@ -120,7 +120,7 @@ Coord FirstInside(BoundingBox &bounds) {
     return Coord(-1, -1, 0);
 }
 
-BoundingBox FloodFill(BoundingBox &original, Coord startCoord) {
+BoundingBox FloodFill(BoundingBox &original, Coord startCoord, int& nFilled) {
     std::vector<Coord> toFill;
     toFill.push_back(startCoord);
     uint8_t firstColour = original.data[startCoord.Index()];
@@ -139,6 +139,7 @@ BoundingBox FloodFill(BoundingBox &original, Coord startCoord) {
             if(currentPixel.y < original.boundingHeight - 1) toFill.push_back(Coord(currentPixel.x, currentPixel.y + 1, original.boundingWidth));
 
         }
+        nFilled++;
     }
 
     return original;
@@ -148,17 +149,23 @@ BoundingBox FloodFill(BoundingBox &original, Coord startCoord) {
 bool IsDoughnut(std::vector<Coord> &border, int width) {
     BoundingBox bounds = BoundingBox(border, width);
     if (bounds.boundingHeight * bounds.boundingWidth > 50000) return false; // too big
-    std::cout << "small enough" << std::endl;
-    return true;
+    // std::cout << "small enough" << std::endl;
     bounds.ConvertToData(); 
     Coord inside = FirstInside(bounds);
 
-    if (inside.x < 0) return false; // no interior coordinate found
+    // if (inside.x < 0) return true; // solid
+    // return false;
 
-    BoundingBox newBounds = FloodFill(bounds, inside);
+    if (inside.x < 0) return false; // no interior coordinate found
+    // std::cout << "about to fill" << std::endl;
+
+    int nFilled = 0;
+
+    BoundingBox newBounds = FloodFill(bounds, inside, nFilled);
+    if (nFilled < 100) return false; // hole not big enough
     Coord newInside = FirstInside(bounds);
 
-    if (inside.x < 0) return true; // flood fill filled the single hole
+    if (newInside.x < 0) return true; // flood fill filled the single hole
     return false;
 }
 
@@ -222,6 +229,7 @@ Border::Border GetBorder(std::vector<uint8_t> &threshold, int width, std::vector
     }
 
     std::vector<Coord> reduced = ReduceBorder(border, width);
+    // std::vector<Coord> reduced = border;
 
     if (!IsDoughnut(reduced, width)) {
         // std::cout << "Not a doughnut" << std::endl;
