@@ -1,4 +1,5 @@
 #include "border.hpp"
+#include <iostream>
 
 struct Coord {
     int x;
@@ -32,6 +33,7 @@ struct BoundingBox {
     int boundingWidth = 0;
     int boundingHeight = 0;
     std::vector<uint8_t> data;
+    std::vector<Coord> borderCopy;
 
     int SurroundCount(Coord index) {
         int count = 0;
@@ -43,6 +45,15 @@ struct BoundingBox {
 
         return count;
     }
+
+    void ConvertToData() {
+        data.resize(boundingWidth * boundingHeight);
+        
+        for (int i = 0; i < borderCopy.size(); i++) {
+            data[Coord(borderCopy[i].x - offset.x, borderCopy[i].y - offset.y, boundingWidth).Index()] = 255;
+        }
+    }
+
 
     BoundingBox(std::vector<Coord> &border, int width) {
         int minX = 10000000;
@@ -64,16 +75,96 @@ struct BoundingBox {
         boundingWidth = maxX - minX;
         boundingHeight = maxY - minY;
 
-        data.resize(boundingWidth * boundingHeight);
-        
-        for (int i = 0; i < border.size(); i++) {
-            data[Coord(border[i].x - offset.x, border[i].y - offset.y, boundingWidth).Index()] = 255;
-        }
+        borderCopy = border;
+
     }
 };
 
-Border::Border ReduceBorder(std::vector<Coord> border, int width) {
+Coord FirstInside(BoundingBox &bounds) {
+    for (int i = 0; i < bounds.boundingHeight; i++) {
+        int changesX = 0;
+        int previousX = bounds.data[0 + i * bounds.boundingWidth];
+        for (int j = 0; j < bounds.boundingWidth; j++) {
+            uint8_t currentDataX = bounds.data[j + i * bounds.boundingWidth];
+
+            if (currentDataX != previousX) {
+                changesX++;
+            }             
+            
+            previousX = currentDataX;
+
+            if (changesX == 1) {
+                int changesY = 0;
+                int previousY = bounds.data[j + 0 * bounds.boundingWidth];
+
+                for (int k = 0; k < i; k++) {
+                    uint8_t currentDataY = bounds.data[j + k * bounds.boundingWidth];
+
+                    if (currentDataY != previousY) {
+                        changesY++;
+                    }
+
+                    previousY = currentDataY;
+                }
+
+                if (changesY == 1) {
+                    return Coord(j, i, bounds.boundingWidth);
+                }
+            }
+            else if (changesX > 1) {
+                break;  
+            }
+        }
+    }
+
+    return Coord(-1, -1, 0);
+}
+
+BoundingBox FloodFill(BoundingBox &original, Coord startCoord) {
+    std::vector<Coord> toFill;
+    toFill.push_back(startCoord);
+    uint8_t firstColour = original.data[startCoord.Index()];
+
+    while(toFill.size() > 0) {
+        // std::cout << toFill.size() << " " << original.boundingWidth << "," << original.boundingHeight << " " << startCoord.width << " " << firstColour <<  std::endl;
+        Coord currentPixel = toFill[toFill.size() - 1];
+        toFill.pop_back();
+
+        if (original.data[currentPixel.Index()] == firstColour) {
+            original.data[currentPixel.Index()] = 255 - firstColour;
+            
+            if(currentPixel.x > 0) toFill.push_back(Coord(currentPixel.x - 1, currentPixel.y, original.boundingWidth));
+            if(currentPixel.y > 0) toFill.push_back(Coord(currentPixel.x, currentPixel.y - 1, original.boundingWidth));
+            if(currentPixel.x < original.boundingWidth - 1) toFill.push_back(Coord(currentPixel.x + 1, currentPixel.y, original.boundingWidth));
+            if(currentPixel.y < original.boundingHeight - 1) toFill.push_back(Coord(currentPixel.x, currentPixel.y + 1, original.boundingWidth));
+
+        }
+    }
+
+    return original;
+}
+
+// over approximation
+bool IsDoughnut(std::vector<Coord> &border, int width) {
     BoundingBox bounds = BoundingBox(border, width);
+    if (bounds.boundingHeight * bounds.boundingWidth > 50000) return false; // too big
+    std::cout << "small enough" << std::endl;
+    return true;
+    bounds.ConvertToData(); 
+    Coord inside = FirstInside(bounds);
+
+    if (inside.x < 0) return false; // no interior coordinate found
+
+    BoundingBox newBounds = FloodFill(bounds, inside);
+    Coord newInside = FirstInside(bounds);
+
+    if (inside.x < 0) return true; // flood fill filled the single hole
+    return false;
+}
+
+std::vector<Coord> ReduceBorder(std::vector<Coord> border, int width) {
+    BoundingBox bounds = BoundingBox(border, width);
+    bounds.ConvertToData();
     bool changeMade = true;
 
     while(changeMade) {
@@ -93,12 +184,12 @@ Border::Border ReduceBorder(std::vector<Coord> border, int width) {
         }
     }
 
-    Border::Border reduced;
+    std::vector<Coord> reduced;
 
     for (int i = 0; i < bounds.boundingHeight; i++) {
         for (int j = 0; j < bounds.boundingWidth; j++) {
             if (bounds.data[Coord(j, i, bounds.boundingWidth).Index()] > 0) {
-                reduced.borderMembers.push_back(Coord(j + bounds.offset.x, i + bounds.offset.y, width).Index());
+                reduced.push_back(Coord(j + bounds.offset.x, i + bounds.offset.y, width));
             }
         }    
     }
@@ -130,7 +221,22 @@ Border::Border GetBorder(std::vector<uint8_t> &threshold, int width, std::vector
         }
     }
 
-    return ReduceBorder(border, width);
+    std::vector<Coord> reduced = ReduceBorder(border, width);
+
+    if (!IsDoughnut(reduced, width)) {
+        // std::cout << "Not a doughnut" << std::endl;
+        reduced = std::vector<Coord>();
+    } else {
+        std::cout << "Doughnut found!" << std::endl;
+    }
+
+    Border::Border result;
+
+    for (int i = 0; i < reduced.size(); i++) {
+        result.borderMembers.push_back(reduced[i].Index());
+    }
+
+    return result;
 }
 
 std::vector<Border::Border> Border::GetBorders(std::vector<uint8_t> &threshold, int width) {
