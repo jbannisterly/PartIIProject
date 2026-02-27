@@ -271,6 +271,14 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
     }
 
     std::vector<Border::Border> borders = Border::GetBorders(threshold, inputImage.cols);
+    std::vector<int> deepBorderIndex = Border::GetInside(borders, inputImage.cols);
+
+    std::vector<Border::Border> deepBorders;
+    for (int i = 0; i < deepBorderIndex.size(); i++) {
+        deepBorders.push_back(borders[deepBorderIndex[i]]);
+    }
+    borders = deepBorders;
+
     std::vector<uint8_t> debugBorders;
     debugBorders.resize(threshold.size() * 3, 0);
     for (int i = 0; i < borders.size(); i++) {
@@ -279,9 +287,9 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
         uint8_t b = rand() % 128 + 100;
 
         for (int j = 0; j < borders[i].borderMembers.size(); j++) {
-            debugBorders[borders[i].borderMembers[j] * 3] = r;
-            debugBorders[borders[i].borderMembers[j] * 3 + 1] = g;
-            debugBorders[borders[i].borderMembers[j] * 3 + 2] = b;
+            debugBorders[borders[i].borderMembers[j].Index() * 3] = r;
+            debugBorders[borders[i].borderMembers[j].Index() * 3 + 1] = g;
+            debugBorders[borders[i].borderMembers[j].Index() * 3 + 2] = b;
         }
     }
 
