@@ -273,23 +273,17 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
     std::vector<Border::Border> borders = Border::GetBorders(threshold, inputImage.cols);
     std::vector<int> deepBorderIndex = Border::GetInside(borders, inputImage.cols);
 
-    std::vector<Border::Border> deepBorders;
-    for (int i = 0; i < deepBorderIndex.size(); i++) {
-        deepBorders.push_back(borders[deepBorderIndex[i]]);
-    }
-    borders = deepBorders;
-
     std::vector<uint8_t> debugBorders;
     debugBorders.resize(threshold.size() * 3, 0);
-    for (int i = 0; i < borders.size(); i++) {
+    for (int i = 0; i < deepBorderIndex.size(); i++) {
         uint8_t r = rand() % 128 + 100;
         uint8_t g = rand() % 128 + 100;
         uint8_t b = rand() % 128 + 100;
 
-        for (int j = 0; j < borders[i].borderMembers.size(); j++) {
-            debugBorders[borders[i].borderMembers[j].Index() * 3] = r;
-            debugBorders[borders[i].borderMembers[j].Index() * 3 + 1] = g;
-            debugBorders[borders[i].borderMembers[j].Index() * 3 + 2] = b;
+        for (int j = 0; j < borders[deepBorderIndex[i]].borderMembers.size(); j++) {
+            debugBorders[borders[deepBorderIndex[i]].borderMembers[j].Index() * 3] = r;
+            debugBorders[borders[deepBorderIndex[i]].borderMembers[j].Index() * 3 + 1] = g;
+            debugBorders[borders[deepBorderIndex[i]].borderMembers[j].Index() * 3 + 2] = b;
         }
     }
 
@@ -299,26 +293,17 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
         imwrite("output/img/output_border_debug.png", borderImage);
     }
 
+    std::vector<FinderCandidate> centres = Border::Finders(borders, deepBorderIndex, inputImage.cols);
+    std::array<FinderCandidate, 3> centresOrdered = {centres[0], centres[1], centres[2]};
 
-    std::vector<FinderCandidate> centres0 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(1, 0, 0)});
-    std::vector<FinderCandidate> centres1 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0)});
-    std::vector<FinderCandidate> centres2 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 1, 0)});
-    std::vector<FinderCandidate> centres3 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)}, &debug);
-
-    std::array<FinderCandidate, 3> centresOrdered = {centres0[0], centres1[0], centres2[0]};
-
-    for (int i = 0; i < centresOrdered.size(); i++) {
-        debug.DebugCross(int(centresOrdered[i].x), int(centresOrdered[i].y), inputImage.cols, centresOrdered[i].width, {0, 255, 0});
-    }
-        debug.DebugCross(int(centres3[0].x), int(centres3[0].y), inputImage.cols, centres3[0].width, {0, 255, 0});
-
-    std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres3[0]);
+    std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres[3]);
 
     for (int i = 0; i < bounds.size(); i++) {
         debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
     }
 
     debug.WriteImage(debugPath, debugBackground);
+    std::cout << "debuggeed to " << debugPath << std::endl;
 
     alignmentData.bounds = bounds;
 

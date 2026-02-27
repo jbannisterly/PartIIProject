@@ -348,7 +348,9 @@ std::vector<int> Border::GetInside(std::vector<Border> &borders, int width) {
         if (maxDepth > 1) {
             if (tree.children[i].children.size() == 1) {
                 if (tree.children[i].parent.boundingWidth < tree.children[i].children[0].parent.boundingWidth * 2) {
-                    deepNodes.push_back(tree.children[i].originalIndex);
+                    if (tree.children[i].parent.boundingHeight < tree.children[i].children[0].parent.boundingHeight * 2) {
+                        deepNodes.push_back(tree.children[i].originalIndex);
+                    }
                 }
             }
         }
@@ -356,3 +358,67 @@ std::vector<int> Border::GetInside(std::vector<Border> &borders, int width) {
 
     return deepNodes;
 }
+
+std::vector<FinderCandidate> SortFinders(std::vector<FinderCandidate> unsorted) {
+    std::vector<FinderCandidate> sorted;
+    int bestScore = -1000;
+    int bestIndex = 0;
+
+    for (int i = 0; i < unsorted.size(); i++) {
+        int score = unsorted[i].y - unsorted[i].x;
+
+        if (score > bestScore) {
+            bestIndex = i;
+            bestScore = score;
+        }
+    }
+    sorted.push_back(unsorted[bestIndex]);
+
+    bestScore = -1000;
+    for (int i = 0; i < unsorted.size(); i++) {
+        int score = -unsorted[i].y - unsorted[i].x;
+
+        if (score > bestScore) {
+            bestIndex = i;
+            bestScore = score;
+        }
+    }
+    sorted.push_back(unsorted[bestIndex]);
+
+    bestScore = -1000;
+    for (int i = 0; i < unsorted.size(); i++) {
+        int score = -unsorted[i].y + unsorted[i].x;
+
+        if (score > bestScore) {
+            bestIndex = i;
+            bestScore = score;
+        }
+    }
+    sorted.push_back(unsorted[bestIndex]);
+
+    bestScore = -1000;
+    for (int i = 0; i < unsorted.size(); i++) {
+        int score = +unsorted[i].y + unsorted[i].x;
+
+        if (score > bestScore) {
+            bestIndex = i;
+            bestScore = score;
+        }
+    }
+    sorted.push_back(unsorted[bestIndex]);
+
+    return sorted;
+}
+
+std::vector<FinderCandidate> Border::Finders(std::vector<Border> &borders, std::vector<int> &validIndices, int width) {
+    std::vector<FinderCandidate> candidates;
+    std::cout << "n valid indices " << validIndices.size() << std::endl;
+    for (int i = 0; i < validIndices.size(); i++) {
+        FinderCandidate candidate = borders[validIndices[i]].toFinderCandidate();
+        candidates.push_back(candidate);
+    }
+
+    return SortFinders(candidates);
+}
+
+
