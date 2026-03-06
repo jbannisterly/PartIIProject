@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdint.h>
 #include "finder_patterns.hpp"
+#include "image_aux.hpp"
 
 namespace Border {    
     struct Coord {

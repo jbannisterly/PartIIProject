@@ -75,7 +75,7 @@ namespace BoundingBox {
         bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[1]).Normalise() + (findersVec[0] - findersVec[3]).Normalise()) * finders[0].width * (MODULEOFFSET / 7);
         bounds[1] = findersVec[1] + ((findersVec[1] - findersVec[2]).Normalise() + (findersVec[1] - findersVec[0]).Normalise()) * finders[1].width * (MODULEOFFSET / 7);
         bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[3]).Normalise() + (findersVec[2] - findersVec[1]).Normalise()) * finders[2].width * (MODULEOFFSET / 7);
-        bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[0]).Normalise() + (findersVec[3] - findersVec[2]).Normalise()) * finders[3].width * (MODULEOFFSET / 7);
+        bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[0]).Normalise() + (findersVec[3] - findersVec[2]).Normalise()) * finder4.width * (MODULEOFFSET / 7);
 
         return bounds;
     }

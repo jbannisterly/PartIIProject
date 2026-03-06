@@ -135,7 +135,10 @@ cv::Size2i EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
     return Size2i(round(sizeEstimateH), round(sizeEstimateV));
 }
 
+int GLOBAL_DEBUG_COUNTER = 0;
+
 std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre, std::optional<DebugImage*> debug={}) {
+    
     std::vector<FinderCandidate> finder = FinderPatterns::FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
 
     if (firstWhite) {
@@ -214,7 +217,7 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
     std::vector<uint8_t> debugBackground(data);
     Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
-    if (debugPath != "") {
+    if (debugPath != "" || true) {
         imwrite("output/img/output_threshold.png", thresholdImage);
     }
 
@@ -253,6 +256,8 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
 }
 
 AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
+    GLOBAL_DEBUG_COUNTER++;
+
     AlignmentData alignmentData;
     
     int nPixels = inputImage.cols * inputImage.rows;
@@ -263,10 +268,15 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
     std::vector<double> grey = ImageProcessing::Greyscale(data, nPixels);
     std::vector<uint8_t> threshold = ImageProcessing::Threshold(grey, inputImage.rows, inputImage.cols);
 
+    threshold = ImageAux::Dilate(threshold, inputImage.cols, inputImage.rows);
+    threshold = ImageAux::Erode(threshold, inputImage.cols, inputImage.rows);
+    threshold = ImageAux::Erode(threshold, inputImage.cols, inputImage.rows);
+    threshold = ImageAux::Dilate(threshold, inputImage.cols, inputImage.rows);
+
     std::vector<uint8_t> debugBackground(data);
     Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
-    if (debugPath != "") {
+    if (debugPath != "" || true) {
         imwrite("output/img/output_threshold.png", thresholdImage);
     }
 
@@ -293,6 +303,33 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
         imwrite("output/img/output_border_debug.png", borderImage);
     }
 
+
+
+    std::vector<uint8_t> debugBorders_all;
+    debugBorders_all.resize(threshold.size() * 3, 0);
+    for (int i = 0; i < borders.size(); i++) {
+
+            uint8_t r = rand() % 128 + 100;
+            uint8_t g = rand() % 128 + 100;
+            uint8_t b = rand() % 128 + 100;
+
+
+        for (int j = 0; j < borders[i].borderMembers.size(); j++) {
+
+
+
+            debugBorders_all[borders[i].borderMembers[j].Index() * 3] = r;
+            debugBorders_all[borders[i].borderMembers[j].Index() * 3 + 1] = g;
+            debugBorders_all[borders[i].borderMembers[j].Index() * 3 + 2] = b;
+        }
+    }
+
+    Mat borderImage_all(inputImage.rows, inputImage.cols, CV_8UC3, debugBorders_all.data());
+    
+    if (debugPath != "") {
+        imwrite("output/img/output_border_debug_all_fills.png", borderImage_all);
+    }
+
     std::vector<FinderCandidate> centres = Border::Finders(borders, deepBorderIndex, inputImage.cols);
     std::array<FinderCandidate, 3> centresOrdered = {centres[0], centres[1], centres[2]};
 
@@ -307,14 +344,19 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
 
     alignmentData.bounds = bounds;
 
-    Vec3 centresVec[3];
-    for (int i = 0; i < 4; i++){
+    Vec3 centresVec[4];
+    for (int i = 0; i < 3; i++){
         centresVec[i] = Vec3(centresOrdered[i].x, centresOrdered[i].y, 0);
     }
+    centresVec[3] = Vec3(centres[3].x, centres[3].y, 0);
 
     cv::Size2i estimatedSize = EstimateBarcodeSize(bounds, centresVec);
     alignmentData.estimatedHeight = estimatedSize.height;
     alignmentData.estimatedWidth = estimatedSize.width;
+
+    // if (GLOBAL_DEBUG_COUNTER == 2) exit(0);
+    // std::cout << "counter " << GLOBAL_DEBUG_COUNTER << std::endl;
+
 
     return alignmentData;
 }

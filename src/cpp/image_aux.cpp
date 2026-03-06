@@ -49,4 +49,56 @@ namespace ImageAux {
 
         return output.clone();
     }
+
+
+    std::vector<uint8_t>  Erode(std::vector<uint8_t> &toErode, int width, int height) {
+        std::vector<uint8_t> result;
+        result.reserve(width * height);
+
+        bool filled;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                filled = false;
+                if (toErode[i * width + j] > 0) filled = true;
+                if (i > 0 && toErode[(i - 1) * width + j] > 0) filled = true;
+                if (j > 0 && toErode[i * width + (j - 1)] > 0) filled = true;
+                if (i < height - 1 && toErode[(i + 1) * width + j] > 0) filled = true;
+                if (j < width - 1 && toErode[i * width + j + 1] > 0) filled = true;
+
+                if (filled) {
+                    result.push_back(255);
+                } else {
+                    result.push_back(0);
+                }
+            }
+        }
+
+        return result;
+    }
+    
+    std::vector<uint8_t> Dilate(std::vector<uint8_t> &toDilate, int width, int height) {
+        std::vector<uint8_t> result;
+        result.reserve(width * height);
+
+        bool filled;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                filled = true;
+                if (toDilate[i * width + j] == 0) filled = false;
+                if (i > 0 && toDilate[(i - 1) * width + j] == 0) filled = false;
+                if (j > 0 && toDilate[i * width + (j - 1)] == 0) filled = false;
+                if (i < height - 1 && toDilate[(i + 1) * width + j] == 0) filled = false;
+                if (j < width - 1 && toDilate[i * width + j + 1] == 0) filled = false;
+
+                if (filled) {
+                    result.push_back(255);
+                } else {
+                    result.push_back(0);
+                }
+            }
+        }
+
+        return result;
+    }
+
 }

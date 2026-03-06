@@ -9,14 +9,14 @@ height {inHeight}
 }
 
 void DebugImage::DebugCross(int x, int y, int width, int crossSize, std::array<uint8_t, 3> colour) {
-    for (int i = -crossSize; i < crossSize; i++) {
-        for (int j = 0; j < 3; j++) {
-            debugImage[(x + y * width + i) * 3 + j] = colour[j];
-            debugImage[(x + (y + i) * width) * 3 + j] = colour[j];
-        }
-        debugMask[(x + y * width + i)] = 1;
-        debugMask[(x + (y + i) * width)] = 1;
-    }
+    // for (int i = -crossSize; i < crossSize; i++) {
+    //     for (int j = 0; j < 3; j++) {
+    //         debugImage[(x + y * width + i) * 3 + j] = colour[j];
+    //         debugImage[(x + (y + i) * width) * 3 + j] = colour[j];
+    //     }
+    //     debugMask[(x + y * width + i)] = 1;
+    //     debugMask[(x + (y + i) * width)] = 1;
+    // }
 }
 
 void DebugImage::DebugCentre(FinderCandidate finder, std::array<uint8_t, 3> colour) {
@@ -51,5 +51,3 @@ void DebugImage::WriteImage(std::string path, std::vector<uint8_t> &background) 
         cv::imwrite(path, debugMat);
     }
 }
-
-

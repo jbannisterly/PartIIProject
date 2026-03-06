@@ -46,8 +46,10 @@ struct BoundingBox {
             if (border[i].y < minY) minY = border[i].y;
         }
 
-        maxX ++;
-        maxY ++;
+        maxX += 2;
+        maxY += 2;
+        minX -= 1;
+        minY -= 1;
 
         offset = Border::Coord(minX, minY, width);
         boundingWidth = maxX - minX;
@@ -257,6 +259,10 @@ std::vector<Border::Coord> ReduceBorder(std::vector<Border::Coord> border, int w
 // flood fill
 Border::Border GetBorder(std::vector<uint8_t> &threshold, int width, std::vector<uint8_t> &valid, int startPosition) {
     
+    if (startPosition >= 135 * width  + 236) {
+        std::cout << "debug here!!!!!" << std::endl;
+    }
+
     std::vector<Border::Coord> border;
     std::vector<Border::Coord> toVisit;
     toVisit.push_back(Border::Coord(startPosition, width));
@@ -330,6 +336,8 @@ std::vector<int> Border::GetInside(std::vector<Border> &borders, int width) {
     candidates.reserve(borders.size());
     
     std::cout << "inside start" << std::endl;
+
+
 
     for (int i = 0; i < borders.size(); i++) {
         candidates.push_back(BoundingBox(borders[i].borderMembers, width));
