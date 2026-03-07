@@ -5,8 +5,6 @@
 #include "compressor.hpp"
 #include "colours.hpp"
 #include <fstream>
-#include "split_error.hpp"
-#include "split_bytes.hpp"
 #include "barcode_writer.hpp"
 #include "colour_palletes.hpp"
 #include "error_layout.hpp"
@@ -43,7 +41,7 @@ int main(){
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
     BarcodeWriter writer(layout);
-    std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
+    std::vector<uint8_t> rawData = writer.BarcodeToPixelsLegacy(imageBytes, totalLength);
 
     ColourPixels colourPix(8);
 
