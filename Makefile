@@ -83,5 +83,5 @@ enc_test:
 	./output/bin/EncoderTest
 
 dec_test:
-	g++ -g -w -Ilibs/ -o output/bin/DecoderTest src/cpp/decoder_error_counter.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp src/cpp/random_data_gen.cpp src/cpp/barcode_image_editor.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g -w -Ilibs/ -o output/bin/DecoderTest src/cpp/decoder_error_counter.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp src/cpp/random_data_gen.cpp src/cpp/barcode_image_editor.cpp src/cpp/colour_correction.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/DecoderTest

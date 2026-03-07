@@ -10,6 +10,7 @@
 #include "error_layout.hpp"
 #include "header_data.hpp"
 #include "random_data_gen.hpp"
+#include "colour_correction.hpp"
 
 using namespace cv;
 
@@ -39,6 +40,11 @@ int main(){
     int totalLength = rows * cols * channels;
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
+
+    imageBytes = ColourCorrection::MethodHighLowAvg(imageBytes, layout);
+
+    Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
+    imwrite("output/img/output_corrected.png", correctedImage);
 
     BarcodeWriter writer(layout);
     std::vector<uint8_t> rawData = writer.BarcodeToPixelsLegacy(imageBytes, totalLength);
