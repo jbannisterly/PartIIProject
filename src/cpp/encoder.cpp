@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
 
     BarcodeWriter writer(GetBarcode4Circle());
     int scale = 8;
-    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, scale);
+    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, scale, true);
     std::cout << imageData.size() << std::endl;
 
     Mat image(BARCODE_HEIGHT * scale, BARCODE_WIDTH * scale, CV_8UC3, imageData.data());

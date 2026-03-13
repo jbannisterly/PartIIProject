@@ -60,7 +60,7 @@ void DrawRings(std::vector<uint8_t> &scaledData, double positionX, double positi
     BarcodeImageEditor::DrawCircle(scaledData, scale * barcodeWidth, positionX * scale, positionY * scale, 1.5 * scale, colours[2]);
 }
 
-std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels, int scale){
+std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels, int scale, bool rings){
     BarcodeLayout layout = templateLayout;
     int capacity = layout.GetDataSize();
     std::vector<int> permutation = RandomPermutation(capacity, 0);
@@ -89,10 +89,13 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
 
     std::vector<uint8_t> scaledData = BarcodeImageEditor::Scale(layout.data, scale, layout.barcodeWidth);
 
-    DrawRings(scaledData, 4.5, 4.5, layout.barcodeWidth, scale);
-    DrawRings(scaledData, layout.barcodeWidth - 4.5, 4.5, layout.barcodeWidth, scale);
-    DrawRings(scaledData, 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale);
-    DrawRings(scaledData, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale, true);
+    if (rings) {
+        DrawRings(scaledData, 4.5, 4.5, layout.barcodeWidth, scale);
+        DrawRings(scaledData, layout.barcodeWidth - 4.5, 4.5, layout.barcodeWidth, scale);
+        DrawRings(scaledData, 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale);
+        DrawRings(scaledData, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale, true);
+    }
+
 
 
     return scaledData;
