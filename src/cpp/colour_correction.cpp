@@ -2,10 +2,10 @@
 
 namespace ColourCorrection {
     std::vector<uint8_t> MethodAverage(std::vector<uint8_t> &data, BarcodeLayout layout) {
-        double count;
-        double red;
-        double green;
-        double blue;
+        double count = 0;
+        double red = 0;
+        double green = 0;
+        double blue = 0;
         int barcodeHeight = layout.mask.size() / layout.barcodeWidth;
         
         for (int i = 0; i < layout.mask.size(); i++) {
@@ -43,14 +43,14 @@ namespace ColourCorrection {
     }
 
     std::vector<uint8_t> MethodHighLowAvg(std::vector<uint8_t> &data, BarcodeLayout layout) {
-        double countH;
-        double countL;
-        double redH;
-        double greenH;
-        double blueH;
-        double redL;
-        double blueL;
-        double greenL;
+        double countH = 0;
+        double countL = 0;
+        double redH = 0;
+        double greenH = 0;
+        double blueH = 0;
+        double redL = 0;
+        double blueL = 0;
+        double greenL = 0;
         int barcodeHeight = layout.mask.size() / layout.barcodeWidth;
         
         for (int i = 0; i < layout.mask.size(); i++) {
@@ -99,5 +99,87 @@ namespace ColourCorrection {
         return data;
     }
 
+    std::vector<uint8_t> MethodQuarters(std::vector<uint8_t> &data, BarcodeLayout layout) {
+        std::array<double, 4> countH;
+        std::array<double, 4> countL;
+        std::array<double, 4> redH;
+        std::array<double, 4> greenH;
+        std::array<double, 4> blueH;
+        std::array<double, 4> redL;
+        std::array<double, 4> blueL;
+        std::array<double, 4> greenL;
+        int barcodeHeight = layout.mask.size() / layout.barcodeWidth;
+
+        for (int i = 0; i < 4; i++) {
+            countH[i] = 0;
+            countL[i] = 0;
+            redH[i] = 0;
+            redL[i] = 0;
+            greenH[i] = 0;
+            greenL[i] = 0;
+            blueH[i] = 0;
+            blueL[i] = 0;
+        }
+        
+        for (int i = 0; i < layout.mask.size(); i++) {
+            int ix = i % layout.barcodeWidth;
+            int iy = i / layout.barcodeWidth;
+            
+            int index = 0;
+            if (ix > layout.barcodeWidth / 2) index += 1;
+            if (iy > barcodeHeight / 2) index += 2;
+
+            if (layout.mask[i] == 0 && ix > 0 && ix < layout.barcodeWidth - 1 && iy > 0 && iy < barcodeHeight - 1) {
+                if (layout.data[i * 3] == 255) {
+                    countH[index]++;
+                    redH[index] += data[i * 3 + 0]; 
+                    greenH[index] += data[i * 3 + 1]; 
+                    blueH[index] += data[i * 3 + 2]; 
+                } else {
+                    countL[index]++;
+                    redL[index] += data[i * 3 + 0]; 
+                    greenL[index] += data[i * 3 + 1]; 
+                    blueL[index] += data[i * 3 + 2]; 
+                }
+            }
+        }
+
+        for (int i = 0; i < 4; i++) {
+            redH[i] /= countH[i];
+            greenH[i] /= countH[i];
+            blueH[i] /= countH[i];
+            redL[i] /= countL[i];
+            greenL[i] /= countL[i];
+            blueL[i] /= countL[i];
+        }
+
+
+        for (int i = 0; i < data.size() / 3; i++) {
+            int ix = i % layout.barcodeWidth;
+            int iy = i / layout.barcodeWidth;
+
+            int index = 0;
+            if (ix > layout.barcodeWidth / 2) index += 1;
+            if (iy > barcodeHeight / 2) index += 2;
+ 
+
+            double newData = (255. / (redH[index] - redL[index]) * (double(data[i * 3 + 0]) - redL[index]));
+            if (newData > 255) newData = 255;
+            if (newData < 0) newData = 0;
+            data[i * 3 + 0] = newData;
+            
+            newData = (255. / (greenH[index] - greenL[index]) * (double(data[i * 3 + 1]) - greenL[index]));
+            if (newData > 255) newData = 255;
+            if (newData < 0) newData = 0;
+            data[i * 3 + 1] = newData;
+            
+            newData = (255. / (blueH[index] - blueL[index]) * (double(data[i * 3 + 2]) - blueL[index]));
+            if (newData > 255) newData = 255;
+            if (newData < 0) newData = 0;
+            data[i * 3 + 2] = newData;
+        }
+
+        return data;
+    }
 
 }
