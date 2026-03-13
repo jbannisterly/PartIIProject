@@ -14,6 +14,8 @@
 
 using namespace cv;
 
+const int BIT_DEPTH = 2;
+
 double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) {
     int count = 0;
     
@@ -47,12 +49,12 @@ int main(){
     imwrite("output/img/output_corrected.png", correctedImage);
 
     BarcodeWriter writer(layout);
-    std::vector<uint8_t> rawData = writer.BarcodeToPixelsLegacy(imageBytes, totalLength);
+    std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
-    ColourPixels colourPix(8);
+    ColourPixels colourPix(BIT_DEPTH);
 
     std::vector<std::vector<uint8_t>> recoveredData = colourPix.PixelsToData(rawData, 0, nPixels / 8);
-    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, 24);
+    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, BIT_DEPTH * 3);
 
     std::vector<double> accuracy;
     accuracy.reserve(trueData.size());
