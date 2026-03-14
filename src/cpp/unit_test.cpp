@@ -15,6 +15,7 @@
 #include "error_layout.hpp"
 #include "header_data.hpp"
 #include "image_aux.hpp"
+#include <gtest/gtest.h>
 
 void TestResult(bool result, std::string testName) {
     if (result) {
@@ -24,58 +25,17 @@ void TestResult(bool result, std::string testName) {
     }
 }
 
-bool CompressorTest(std::vector<uint8_t> &data) {
-    Compression compressor;
-    
-    std::vector<uint8_t> compressedData = compressor.compress(data);
-    std::vector<uint8_t> recoveredData = compressor.decompress(compressedData.data(), compressedData.size());
-
-    return recoveredData == data;
-}
-
-bool SplitTest(std::vector<uint8_t> &data, std::vector<ErrorCorrectionVirtual*> errorCorrectors) {
-    std::vector<std::vector<uint8_t>> split = SplitBytes::Encode(data, errorCorrectors);
-    std::vector<uint8_t> recovered = SplitBytes::Decode(split, data.size());
-
-    return recovered == data;
-}
-
-bool ErrorCorrectionTest(std::vector<std::vector<uint8_t>> &data, std::vector<ErrorCorrectionVirtual*> errorCorrectors) {
-    SplitError split(errorCorrectors);
-
-    std::vector<std::vector<uint8_t>> correction = split.Encode(data);
-    std::vector<std::vector<uint8_t>> recovered = split.Decode(correction);
-
-    return recovered == data;
-}
-
-bool DataToPixelsTest(std::vector<std::vector<uint8_t>> &data, ColourPixels colourPix) {
-    std::vector<uint8_t> pixelData = colourPix.DataToPixels(data);
-    std::vector<std::vector<uint8_t>> recovered = colourPix.PixelsToData(pixelData, 0, data[0].size());
-
-    return recovered == data;
-}
-
-bool LengthTest(std::vector<uint8_t> &data, std::vector<ErrorCorrectionVirtual*> errorCorrectors, ColourPixels colourPix) {
-    std::vector<uint8_t> dataCopy = data;
-    SplitError split(errorCorrectors);
-
-    HeaderData::PrependLength(dataCopy);
-    std::vector<std::vector<uint8_t>> splitData = SplitBytes::Encode(dataCopy, errorCorrectors);
-    std::vector<uint8_t> pixels = colourPix.DataToPixels(splitData);
-
-    int recoveredLength = HeaderData::GetCompressedLen(pixels, colourPix, errorCorrectors[0]);
-
-    return recoveredLength == data.size();
-}
-
-int main() {
+std::vector<uint8_t> GetData() {
     std::vector<uint8_t> data;
     data.reserve(2000);
     for (int i = 0; i < 2000; i++) {
         data.push_back(i % 256);
     }
 
+    return data;
+}
+
+std::vector<std::vector<uint8_t>> GetSplitData() {
     std::vector<std::vector<uint8_t>> splitData;
     for (int i = 0; i < 3; i++) {
         std::vector<uint8_t> dataPart;
@@ -85,12 +45,79 @@ int main() {
         splitData.push_back(dataPart);
     }
 
+    return splitData;
+}
+
+TEST(CompressorTest, Test1) {
+    Compression compressor;
+    
+    std::vector<uint8_t> data = GetData();
+
+    std::vector<uint8_t> compressedData = compressor.compress(data);
+    std::vector<uint8_t> recoveredData = compressor.decompress(compressedData.data(), compressedData.size());
+
+    EXPECT_EQ(recoveredData, data);
+}
+
+TEST(SplitTest, Test1) {
+    std::vector<uint8_t> data = GetData();
+    std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
+    
+    std::vector<std::vector<uint8_t>> splitData = SplitBytes::Encode(data, errorCorrectors);
+    std::vector<uint8_t> recovered = SplitBytes::Decode(splitData, data.size());
+
+    EXPECT_EQ(recovered, data);
+}
+
+TEST(ErrorCorrectionTest, Test1) {
+    std::vector<std::vector<uint8_t>> splitData = GetSplitData(); 
+    std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
+    SplitError split(errorCorrectors);
+
+    std::vector<std::vector<uint8_t>> correction = split.Encode(splitData);
+    std::vector<std::vector<uint8_t>> recovered = split.Decode(correction);
+
+    EXPECT_EQ(recovered, splitData);
+}
+
+TEST(DataToPixelsTest, Test1) {
+    ColourPixels colourPix = ColourPalletes::Bit_3();
+    std::vector<std::vector<uint8_t>> splitData = GetSplitData(); 
+
+
+    std::vector<uint8_t> pixelData = colourPix.DataToPixels(splitData);
+    std::vector<std::vector<uint8_t>> recovered = colourPix.PixelsToData(pixelData, 0, splitData[0].size());
+
+    EXPECT_EQ(recovered, splitData);
+}
+
+TEST(LengthTest, Test1) {
+    std::vector<uint8_t> data = GetData();    
     std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
     ColourPixels colourPix = ColourPalletes::Bit_3();
+    std::vector<uint8_t> dataCopy = data;
+    SplitError split(errorCorrectors);
 
-    TestResult(CompressorTest(data), "compressor");
-    TestResult(SplitTest(data, errorCorrectors), "split");
-    TestResult(ErrorCorrectionTest(splitData, errorCorrectors), "split error");
-    TestResult(DataToPixelsTest(splitData, colourPix), "data to pixels");
-    TestResult(LengthTest(data, errorCorrectors, colourPix), "length");
+    HeaderData::PrependLength(dataCopy);
+    std::vector<std::vector<uint8_t>> splitData = SplitBytes::Encode(dataCopy, errorCorrectors);
+    std::vector<uint8_t> pixels = colourPix.DataToPixels(splitData);
+
+    int recoveredLength = HeaderData::GetCompressedLen(pixels, colourPix, errorCorrectors[0]);
+
+    EXPECT_EQ(recoveredLength, data.size());
+}
+
+int main() {
+
+    testing::InitGoogleTest();
+
+    // std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
+    // ColourPixels colourPix = ColourPalletes::Bit_3();
+
+    // TestResult(SplitTest(data, errorCorrectors), "split");
+    // TestResult(ErrorCorrectionTest(splitData, errorCorrectors), "split error");
+    // TestResult(DataToPixelsTest(splitData, colourPix), "data to pixels");
+    // TestResult(LengthTest(data, errorCorrectors, colourPix), "length");
+
+    return RUN_ALL_TESTS();
 }
