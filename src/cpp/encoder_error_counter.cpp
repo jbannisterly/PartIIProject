@@ -18,22 +18,24 @@
 
 using namespace cv;
 
-const int BIT_DEPTH = 2;
 
 int main(){
+    const int _BIT_DEPTH = 3;
+    const int _SCALE = 16;
+
     BarcodeLayout layout = GetBarcode4Detailed();
-    ColourPixels colourPix(BIT_DEPTH);
+    ColourPixels colourPix(_BIT_DEPTH);
     int barcodeCapacity = GetCapacity(layout) / 8;
 
     std::cout << barcodeCapacity << std::endl;
 
-    std::vector<std::vector<uint8_t>> splitData = RandomDataGen::GenerateRandomData(100, barcodeCapacity, BIT_DEPTH * 3);
+    std::vector<std::vector<uint8_t>> splitData = RandomDataGen::GenerateRandomData(100, barcodeCapacity, _BIT_DEPTH * 3);
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(splitData);
 
     BarcodeWriter writer(layout);
-    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData);
+    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, _SCALE, false);
 
-    Mat image(BARCODE_HEIGHT, BARCODE_WIDTH, CV_8UC3);
+    Mat image(BARCODE_HEIGHT * _SCALE, BARCODE_WIDTH * _SCALE, CV_8UC3);
     image.data = imageData.data();
 
     imwrite("output/img/output.png", image);

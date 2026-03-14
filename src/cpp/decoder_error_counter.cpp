@@ -14,8 +14,6 @@
 
 using namespace cv;
 
-const int BIT_DEPTH = 2;
-
 double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) {
     int count = 0;
     
@@ -32,6 +30,8 @@ double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) 
 }
 
 int main(){
+    const int _BIT_DEPTH = 2;
+
     Mat image = imread("output/img/output_align.png");
     BarcodeLayout layout = GetBarcode4Detailed();
     int nPixels = (GetCapacity(layout) / 8) * 8;
@@ -51,10 +51,10 @@ int main(){
     BarcodeWriter writer(layout);
     std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
-    ColourPixels colourPix(BIT_DEPTH);
+    ColourPixels colourPix(_BIT_DEPTH);
 
     std::vector<std::vector<uint8_t>> recoveredData = colourPix.PixelsToData(rawData, 0, nPixels / 8);
-    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, BIT_DEPTH * 3);
+    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, _BIT_DEPTH * 3);
 
     std::vector<double> accuracy;
     accuracy.reserve(trueData.size());
