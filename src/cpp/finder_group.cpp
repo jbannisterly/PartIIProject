@@ -52,7 +52,7 @@ std::vector<FinderCandidate> FinderGroup::FinderPatternVertical(int patternSize,
         verticalCandidates[i].y = temp + startPosition->y;
     }
 
-    free(startPosition);
+    // free(startPosition);
 
     return verticalCandidates;
 }

@@ -205,7 +205,7 @@ bool IsDoughnut(std::vector<Border::Coord> &border, int width) {
     bounds.ConvertToData(); 
     Border::Coord inside = FirstInside(bounds);
 
-    // if (inside.x < 0) return true; // solid
+    if (inside.x < 0) return true; // solid
     // return false;
 
     if (inside.x < 0) return false; // no interior Border::Coordinate found

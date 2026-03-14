@@ -119,7 +119,7 @@ std::array<FinderCandidate, 3> OrderCentres(std::vector<FinderCandidate> &centre
     return candidatesSorted;
 }
 
-cv::Size2i EstimateBarcodeSize(std::array<Vec3, 4> bounds, Vec3* centres){
+cv::Size2i EstimateBarcodeSize(std::array<Vec3, 4> bounds, std::array<Vec3, 4> centres){
     double centreDistanceH = (centres[1] - centres[2]).Magnitude();
     double boundsDistanceH = (bounds[1] - bounds[2]).Magnitude();
 
@@ -226,6 +226,8 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
     std::vector<FinderCandidate> centres2 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 1, 0)});
     std::vector<FinderCandidate> centres3 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)}, &debug);
 
+    std::cout << centres0.size() << " " << centres1.size() << " " << centres2.size() << " " << centres3.size();
+
     std::array<FinderCandidate, 3> centresOrdered = {centres0[0], centres1[0], centres2[0]};
 
     for (int i = 0; i < centresOrdered.size(); i++) {
@@ -239,14 +241,19 @@ AlignmentData GetBounds(Mat inputImage, std::string debugPath) {
         debug.DebugCross(int(bounds[i].x), int(bounds[i].y), inputImage.cols, 10, {0, 0, 255});
     }
 
+    std::cout << "POINT A" << std::endl;
+
     debug.WriteImage(debugPath, debugBackground);
+
+    std::cout << "POINT B - writted debug" << std::endl;
 
     alignmentData.bounds = bounds;
 
-    Vec3 centresVec[3];
-    for (int i = 0; i < 4; i++){
+    std::array<Vec3, 4> centresVec;
+    for (int i = 0; i < 3; i++){
         centresVec[i] = Vec3(centresOrdered[i].x, centresOrdered[i].y, 0);
     }
+    centresVec[3] = Vec3(centres3[0].x, centres3[0].y, 0);
 
     cv::Size2i estimatedSize = EstimateBarcodeSize(bounds, centresVec);
     alignmentData.estimatedHeight = estimatedSize.height;
@@ -344,7 +351,7 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
 
     alignmentData.bounds = bounds;
 
-    Vec3 centresVec[4];
+    std::array<Vec3, 4> centresVec;
     for (int i = 0; i < 3; i++){
         centresVec[i] = Vec3(centresOrdered[i].x, centresOrdered[i].y, 0);
     }
@@ -364,7 +371,7 @@ AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugPath) {
 Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath){
     Mat outputImage;
 
-    AlignmentData alignment = GetBoundsBorderMethod(inputImage, debugPath);
+    AlignmentData alignment = GetBounds(inputImage, debugPath);
     std::array<Vec3, 4> bounds = alignment.bounds;
 
     std::array<Vec3, 4> expandedCoords = BoundingBox::ExpansionBox(bounds, fractionExpand);

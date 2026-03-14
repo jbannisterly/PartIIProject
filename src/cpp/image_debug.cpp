@@ -48,6 +48,7 @@ void DebugImage::WriteImage(std::string path, std::vector<uint8_t> &background) 
     cv::Mat debugMat(height, width, CV_8UC3, output.data());
     
     if (path != "") {
+        std::cout << "debugg ing image print" << std::endl;
         cv::imwrite(path, debugMat);
     }
 }
