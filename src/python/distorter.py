@@ -9,7 +9,7 @@ barcode = cv2.resize(barcode, (x * 8, y * 8), interpolation=cv2.INTER_NEAREST)
 y,x,c = barcode.shape
 
 proj_from = np.float32([[0,0],[x,0],[0,y],[x,y]])
-proj_to = np.float32([[40,205],[940, 256],[100,1520],[1028,1488]])
+proj_to = np.float32([[40,205],[940, 256],[100,800],[1028,789]])
 
 transform_matrix = cv2.getPerspectiveTransform(proj_from, proj_to)
 barcode_proj = np.float32(cv2.warpPerspective(barcode, transform_matrix, (1080, 1920))) / 256

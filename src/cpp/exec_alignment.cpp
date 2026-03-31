@@ -3,7 +3,7 @@
 using namespace cv;
 
 int main(){
-    BarcodeConfig config(100, 100);
+    BarcodeConfig config(100, 150);
     std::string filePathDebug = "output/img/output_debug_";
     std::string filePathOut = "output/img/output_align_";
     std::string filePath = "output/img/output_distorted.png";

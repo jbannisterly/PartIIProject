@@ -93,7 +93,7 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
         DrawRings(scaledData, 4.5, 4.5, layout.barcodeWidth, scale);
         DrawRings(scaledData, layout.barcodeWidth - 4.5, 4.5, layout.barcodeWidth, scale);
         DrawRings(scaledData, 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale);
-        DrawRings(scaledData, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale, true);
+        DrawRings(scaledData, layout.barcodeWidth - 4.5, layout.data.size() / 3 / layout.barcodeWidth - 4.5, layout.barcodeWidth, scale, true);
     }
 
 
