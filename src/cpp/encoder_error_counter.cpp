@@ -24,7 +24,7 @@ int main(){
     const int _SCALE = 16;
     BarcodeConfig config(100, 100);
 
-    BarcodeLayout layout = GetBarcode4Detailed();
+    BarcodeLayout layout = GetBarcode4Detailed(config);
     ColourPixels colourPix(_BIT_DEPTH);
     int barcodeCapacity = GetCapacity(layout) / 8;
 
