@@ -30,7 +30,7 @@ double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) 
 }
 
 int main(){
-    const int _BIT_DEPTH = 2;
+    const int _BIT_DEPTH = 8;
 
     Mat image = imread("output/img/output_align.png");
     BarcodeLayout layout = GetBarcode4Detailed();
@@ -43,7 +43,7 @@ int main(){
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-    imageBytes = ColourCorrection::MethodQuarters(imageBytes, layout);
+    imageBytes = ColourCorrection::MethodAverage(imageBytes, layout);
 
     Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
     imwrite("output/img/output_corrected.png", correctedImage);
