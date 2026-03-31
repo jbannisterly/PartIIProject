@@ -1,9 +1,11 @@
 #include "finder_patterns.hpp"
+#include <iostream>
 
 namespace FinderPatterns {
 
 int CountSame(std::vector<uint8_t> &data, int index, int size){
     int i = 0; 
+    if (index == data.size()) return 0;
     uint8_t value = data[index];
 
     while(index + i < size && data[index + i] == value){

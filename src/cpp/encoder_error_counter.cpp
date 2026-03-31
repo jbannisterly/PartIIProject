@@ -22,6 +22,7 @@ using namespace cv;
 int main(){
     const int _BIT_DEPTH = 3;
     const int _SCALE = 16;
+    BarcodeConfig config(100, 100);
 
     BarcodeLayout layout = GetBarcode4Detailed();
     ColourPixels colourPix(_BIT_DEPTH);
@@ -35,7 +36,7 @@ int main(){
     BarcodeWriter writer(layout);
     std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, _SCALE, false);
 
-    Mat image(BARCODE_HEIGHT * _SCALE, BARCODE_WIDTH * _SCALE, CV_8UC3);
+    Mat image(config.barcodeHeight * _SCALE, config.barcodeWidth * _SCALE, CV_8UC3);
     image.data = imageData.data();
 
     imwrite("output/img/output.png", image);

@@ -2,14 +2,14 @@
 #include "_config.hpp"
 #include <iostream>
 
-Position* FinderGroup::VerticalOffset(){
+Position FinderGroup::VerticalOffset(){
     FinderCandidate centre = Centre();
     double startX = centre.x - centre.width * 4 / 7;
     double startY = centre.y - centre.width * 6 / 7;
     if (startX < 0) startX = 0;
     if (startY < 0) startY = 0;
 
-    Position* offset = new Position(startX, startY);
+    Position offset = Position(startX, startY);
 
     return offset;
 }
@@ -17,9 +17,9 @@ Position* FinderGroup::VerticalOffset(){
     // Get rectangle around candidates to check for finder pattern
 VerticalData FinderGroup::VerticalSample(std::vector<uint8_t> data, int dataX, int dataY){
     FinderCandidate centre = Centre();
-    Position* offset = VerticalOffset();
-    int startX = offset->x;
-    int startY = offset->y;
+    Position offset = VerticalOffset();
+    int startX = offset.x;
+    int startY = offset.y;
 
     VerticalData sample;
         
@@ -42,14 +42,14 @@ VerticalData FinderGroup::VerticalSample(std::vector<uint8_t> data, int dataX, i
 }
 
 std::vector<FinderCandidate> FinderGroup::FinderPatternVertical(int patternSize, VerticalData vertical, std::function<bool (std::vector<int>)> patternValid, bool firstWhite){
-    Position* startPosition = VerticalOffset();
+    Position startPosition = VerticalOffset();
     std::vector<FinderCandidate> verticalCandidates = FinderPatterns::FinderPatterns(patternSize, vertical.data, vertical.width, vertical.height, patternValid, firstWhite);
 
     for (int i = 0; i < verticalCandidates.size(); i++){
         double temp;
         temp = verticalCandidates[i].x;
-        verticalCandidates[i].x = verticalCandidates[i].y + startPosition->x;
-        verticalCandidates[i].y = temp + startPosition->y;
+        verticalCandidates[i].x = verticalCandidates[i].y + startPosition.x;
+        verticalCandidates[i].y = temp + startPosition.y;
     }
 
     // free(startPosition);

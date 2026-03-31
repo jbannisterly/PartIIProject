@@ -23,6 +23,7 @@ int main(int argc, char *argv[]){
     }
 
     try {
+        BarcodeConfig config(100, 100);
         Mat image = imread(path);
 
         int channels = image.channels();
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]){
 
         std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-        BarcodeWriter writer(GetBarcode4Detailed());
+        BarcodeWriter writer(GetBarcode4Detailed(config));
         std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
         ColourPixels colourPix = ColourPalletes::Bit_3();

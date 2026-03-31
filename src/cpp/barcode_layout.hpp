@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include "_config.hpp"
 
 struct BarcodeLayout{
     std::vector<uint8_t> data;
@@ -23,9 +24,9 @@ struct BarcodeLayout{
     }
 };
 
-BarcodeLayout GetBarcode3();
-BarcodeLayout GetBarcode4Simple();
-BarcodeLayout GetBarcode4Detailed();
-BarcodeLayout GetBarcode4Circle();
+BarcodeLayout GetBarcode3(BarcodeConfig config);
+BarcodeLayout GetBarcode4Simple(BarcodeConfig config);
+BarcodeLayout GetBarcode4Detailed(BarcodeConfig config);
+BarcodeLayout GetBarcode4Circle(BarcodeConfig config);
 
 int GetCapacity(BarcodeLayout barcode);

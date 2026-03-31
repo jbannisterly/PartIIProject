@@ -12,7 +12,7 @@ class FinderGroup{
     std::vector<FinderCandidate> candidates;
     std::vector<FinderCandidate> verticalCandidates;
 
-    Position* VerticalOffset();
+    Position VerticalOffset();
 
     // Get rectangle around candidates to check for finder pattern
     VerticalData VerticalSample(std::vector<uint8_t> data, int dataX, int dataY);
