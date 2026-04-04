@@ -19,7 +19,7 @@ int main(){
     }
 
     
-    Mat outputImage = Alignment::AlignImage(nextImage, config.barcodeHeight, config.barcodeWidth, 0, filePathDebug + "final.png");
+    Mat outputImage = Alignment::AlignImage(nextImage, config.barcodeHeight, config.barcodeWidth, 0, filePathDebug + "final");
     std::cout << "writing the final image" << std::endl;
     imwrite(filePathOutFinal, outputImage);
     std::cout << "Finished program" << std::endl;
