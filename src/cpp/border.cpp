@@ -259,10 +259,6 @@ std::vector<Border::Coord> ReduceBorder(std::vector<Border::Coord> border, int w
 // flood fill
 Border::Border GetBorder(std::vector<uint8_t> &threshold, int width, std::vector<uint8_t> &valid, int startPosition) {
     
-    if (startPosition >= 135 * width  + 236) {
-        std::cout << "debug here!!!!!" << std::endl;
-    }
-
     std::vector<Border::Coord> border;
     std::vector<Border::Coord> toVisit;
     toVisit.push_back(Border::Coord(startPosition, width));

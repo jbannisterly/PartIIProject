@@ -13,7 +13,7 @@ int main(){
     Mat nextImage;
 
     for (int i = 0; i < ALIGNMENT_ITERATIONS; i++){
-        nextImage = Alignment::AlignImage(image.clone(), config.barcodeHeight * 16, config.barcodeWidth * 16, 0.1, filePathDebug + std::to_string(i) +  ".png");
+        nextImage = Alignment::AlignImage(image.clone(), config.barcodeHeight * 16, config.barcodeWidth * 16, 0.1, filePathDebug + std::to_string(i));
         imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
         image = nextImage;
     }
