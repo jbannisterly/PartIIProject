@@ -320,7 +320,6 @@ Node BuildTree(std::vector<BoundingBox> &candidates, int width) {
     for (int i = 0; i < candidates.size(); i++) {
         BoundingBox candidate(candidates[i]);
         Node candidateNode(candidate, i);
-        std::cout << "making " << i << " of " << candidates.size() << std::endl;
         parentNode.AddChild(candidateNode);
     }
 
@@ -341,7 +340,7 @@ std::vector<int> Border::GetInside(std::vector<Border> &borders, int width) {
 
     Node tree = BuildTree(candidates, width);
 
-    tree.PrettyPrint(0);
+    // tree.PrettyPrint(0);
 
     std::cout << "tree built!" << std::endl;
 

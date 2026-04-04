@@ -4,6 +4,13 @@ using namespace cv;
 
 int main(){
     BarcodeConfig config(100, 150);
+
+    std::vector<int> sizes;
+    sizes.push_back(50);
+    sizes.push_back(100);
+    sizes.push_back(150);
+    sizes.push_back(200);
+
     std::string filePathDebug = "output/img/output_debug_";
     std::string filePathOut = "output/img/output_align_";
     std::string filePath = "output/img/output_distorted.png";
@@ -13,13 +20,13 @@ int main(){
     Mat nextImage;
 
     for (int i = 0; i < ALIGNMENT_ITERATIONS; i++){
-        nextImage = Alignment::AlignImage(image.clone(), config.barcodeHeight * 16, config.barcodeWidth * 16, 0.1, filePathDebug + std::to_string(i));
+        nextImage = Alignment::AlignImage(image.clone(), sizes, sizes, 0.1, filePathDebug + std::to_string(i), 16);
         imwrite(filePathOut + std::to_string(i) + ".png", nextImage);
         image = nextImage;
     }
 
     
-    Mat outputImage = Alignment::AlignImage(nextImage, config.barcodeHeight, config.barcodeWidth, 0, filePathDebug + "final");
+    Mat outputImage = Alignment::AlignImage(nextImage, sizes, sizes, 0, filePathDebug + "final");
     std::cout << "writing the final image" << std::endl;
     imwrite(filePathOutFinal, outputImage);
     std::cout << "Finished program" << std::endl;

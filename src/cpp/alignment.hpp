@@ -27,7 +27,7 @@ struct AlignmentData {
 };
 
 namespace Alignment {
-    cv::Mat AlignImage(cv::Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugPath = "");
+    cv::Mat AlignImage(cv::Mat inputImage, std::vector<int> &projectionHeight, std::vector<int> &projectionWidth, double fractionExpand, std::string debugPath = "", int projectionScale = 1);
     AlignmentData GetBounds(cv::Mat inputImage, std::string debugPath = "");
     AlignmentData GetBoundsBorderMethod(cv::Mat inputImage, std::string debugPath = "");
 }

@@ -324,12 +324,32 @@ namespace Alignment {
         return alignmentData;
     }
 
-    Mat AlignImage(Mat inputImage, int projectionHeight, int projectionWidth, double fractionExpand, std::string debugDirectory){
+    int GetClosestSize(std::vector<int> sizes, int estimatedSize) {
+        int bestError = 99999;
+        int bestSize = sizes[0];
+
+        for (int i = 0; i < sizes.size(); i++) {
+            int error = abs(estimatedSize - sizes[i]);
+            if (error < bestError) {
+                bestError = error;
+                bestSize = sizes[i];
+            }
+        }
+
+        std::cout << "Estimated was " << estimatedSize << std::endl;
+        std::cout << "Reality was " << bestSize << std::endl;
+
+        return bestSize;
+    }
+
+    Mat AlignImage(Mat inputImage, std::vector<int> &projectionHeight, std::vector<int> &projectionWidth, double fractionExpand, std::string debugDirectory, int projectionScale){
         Mat outputImage;
 
         std::filesystem::create_directory(debugDirectory);
         AlignmentData alignment = GetBoundsBorderMethod(inputImage, debugDirectory + "/");
         std::array<Vec3, 4> bounds = alignment.bounds;
+        alignment.estimatedHeight = GetClosestSize(projectionHeight, alignment.estimatedHeight);
+        alignment.estimatedWidth = GetClosestSize(projectionHeight, alignment.estimatedWidth);
 
         std::array<Vec3, 4> expandedCoords = BoundingBox::ExpansionBox(bounds, fractionExpand);
         std::array<int, 8> projectCoordsAdjusted;
@@ -338,7 +358,7 @@ namespace Alignment {
             projectCoordsAdjusted[i * 2 + 1] = expandedCoords[i].y;
         }
 
-        outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(projectionWidth, projectionHeight)); 
+        outputImage = ImageAux::Project(inputImage, projectCoordsAdjusted, Size(alignment.estimatedWidth * projectionScale, alignment.estimatedHeight * projectionScale)); 
 
         return outputImage.clone();
     }
