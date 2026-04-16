@@ -15,29 +15,36 @@
 #include "error_layout.hpp"
 #include "header_data.hpp"
 #include "random_data_gen.hpp"
+#include <filesystem>
+#include <string>
 
 using namespace cv;
 
 
 int main(){
-    const int _BIT_DEPTH = 3;
     const int _SCALE = 16;
-    BarcodeConfig config(100, 100);
+    BarcodeConfig config(200, 150);
+    std::string outputDirectory = "output/img/evaluation/colour_test/";
+    std::filesystem::create_directory(outputDirectory);
 
-    BarcodeLayout layout = GetBarcode4Detailed(config);
-    ColourPixels colourPix(_BIT_DEPTH);
-    int barcodeCapacity = GetCapacity(layout) / 8;
+    for (int i = 1; i < 9; i++) {
+        int bitDepth = i;
 
-    std::cout << barcodeCapacity << std::endl;
+        BarcodeLayout layout = GetBarcode4Circle(config);
+        ColourPixels colourPix(bitDepth);
+        int barcodeCapacity = GetCapacity(layout) / 8;
 
-    std::vector<std::vector<uint8_t>> splitData = RandomDataGen::GenerateRandomData(100, barcodeCapacity, _BIT_DEPTH * 3);
-    std::vector<uint8_t> pixelData = colourPix.DataToPixels(splitData);
+        std::cout << barcodeCapacity << std::endl;
 
-    BarcodeWriter writer(layout);
-    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, _SCALE, false);
+        std::vector<std::vector<uint8_t>> splitData = RandomDataGen::GenerateRandomData(100, barcodeCapacity, bitDepth * 3);
+        std::vector<uint8_t> pixelData = colourPix.DataToPixels(splitData);
 
-    Mat image(config.barcodeHeight * _SCALE, config.barcodeWidth * _SCALE, CV_8UC3);
-    image.data = imageData.data();
+        BarcodeWriter writer(layout);
+        std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, _SCALE, true);
 
-    imwrite("output/img/output.png", image);
+        Mat image(config.barcodeHeight * _SCALE, config.barcodeWidth * _SCALE, CV_8UC3);
+        image.data = imageData.data();
+
+        imwrite(outputDirectory + "output_" +  std::to_string(bitDepth) + "bits.png", image);
+    }
 }

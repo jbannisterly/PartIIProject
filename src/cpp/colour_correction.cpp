@@ -1,7 +1,7 @@
 #include "colour_correction.hpp"
 
 namespace ColourCorrection {
-    std::vector<uint8_t> MethodAverage(std::vector<uint8_t> &data, BarcodeLayout layout) {
+    std::vector<uint8_t> MethodAverage(std::vector<uint8_t> &data, BarcodeLayout layout, bool allPixels) {
         double count = 0;
         double red = 0;
         double green = 0;
@@ -11,7 +11,7 @@ namespace ColourCorrection {
         for (int i = 0; i < layout.mask.size(); i++) {
             int ix = i % layout.barcodeWidth;
             int iy = i / layout.barcodeWidth;
-            if (layout.mask[i] == 0 && ix > 0 && ix < layout.barcodeWidth - 1 && iy > 0 && iy < barcodeHeight - 1) {
+            if ((layout.mask[i] == 0 && ix > 0 && ix < layout.barcodeWidth - 1 && iy > 0 && iy < barcodeHeight - 1) || allPixels) {
                 if (layout.data[i * 3] == 255) {
                     count++;
                     red += data[i * 3 + 0]; 
@@ -25,16 +25,23 @@ namespace ColourCorrection {
         green /= count;
         blue /= count;
 
+        double averageColour;
+        if (allPixels) {
+            averageColour = 127.;
+        } else {
+            averageColour = 255.;
+        }
+
         for (int i = 0; i < data.size() / 3; i++) {
-            double newData = (255. / red * data[i * 3 + 0]);
+            double newData = (averageColour / red * data[i * 3 + 0]);
             if (newData > 255) newData = 255;
             data[i * 3 + 0] = newData;
             
-            newData = (255. / green * data[i * 3 + 1]);
+            newData = (averageColour / green * data[i * 3 + 1]);
             if (newData > 255) newData = 255;
             data[i * 3 + 1] = newData;
             
-            newData = (255. / blue * data[i * 3 + 2]);
+            newData = (averageColour / blue * data[i * 3 + 2]);
             if (newData > 255) newData = 255;
             data[i * 3 + 2] = newData;
         }
@@ -129,7 +136,7 @@ namespace ColourCorrection {
             if (ix > layout.barcodeWidth / 2) index += 1;
             if (iy > barcodeHeight / 2) index += 2;
 
-            if (layout.mask[i] == 0 && ix > 0 && ix < layout.barcodeWidth - 1 && iy > 0 && iy < barcodeHeight - 1) {
+            if ((layout.mask[i] == 0 && ix > 0 && ix < layout.barcodeWidth - 1 && iy > 0 && iy < barcodeHeight - 1)) {
                 if (layout.data[i * 3] == 255) {
                     countH[index]++;
                     redH[index] += data[i * 3 + 0]; 
@@ -181,5 +188,71 @@ namespace ColourCorrection {
 
         return data;
     }
+
+    std::vector<uint8_t> MethodQuartersAverage(std::vector<uint8_t> &data, BarcodeLayout layout, bool allPixels) {
+        std::array<double, 4> count;
+        std::array<double, 4> red;
+        std::array<double, 4> green;
+        std::array<double, 4> blue;
+        int barcodeHeight = layout.mask.size() / layout.barcodeWidth;
+
+        for (int i = 0; i < 4; i++) {
+            count[i] = 0;
+            red[i] = 0;
+            green[i] = 0;
+            blue[i] = 0;
+        }
+        
+        for (int i = 0; i < layout.mask.size(); i++) {
+            int ix = i % layout.barcodeWidth;
+            int iy = i / layout.barcodeWidth;
+            
+            int index = 0;
+            if (ix > layout.barcodeWidth / 2) index += 1;
+            if (iy > barcodeHeight / 2) index += 2;
+
+            if ((layout.mask[i] == 0 && ix > 0 && ix < layout.barcodeWidth - 1 && iy > 0 && iy < barcodeHeight - 1) || allPixels) {
+                count[index]++;
+                red[index] += data[i * 3 + 0]; 
+                green[index] += data[i * 3 + 1]; 
+                blue[index] += data[i * 3 + 2]; 
+            }
+        }
+
+        for (int i = 0; i < 4; i++) {
+            red[i] /= count[i];
+            green[i] /= count[i];
+            blue[i] /= count[i];
+        }
+
+
+        for (int i = 0; i < data.size() / 3; i++) {
+            int ix = i % layout.barcodeWidth;
+            int iy = i / layout.barcodeWidth;
+
+            int index = 0;
+            if (ix > layout.barcodeWidth / 2) index += 1;
+            if (iy > barcodeHeight / 2) index += 2;
+ 
+
+            double newData = (255. / (red[index]) * (double(data[i * 3 + 0])));
+            if (newData > 255) newData = 255;
+            if (newData < 0) newData = 0;
+            data[i * 3 + 0] = newData;
+            
+            newData = (255. / (green[index]) * (double(data[i * 3 + 1])));
+            if (newData > 255) newData = 255;
+            if (newData < 0) newData = 0;
+            data[i * 3 + 1] = newData;
+            
+            newData = (255. / (blue[index]) * (double(data[i * 3 + 2])));
+            if (newData > 255) newData = 255;
+            if (newData < 0) newData = 0;
+            data[i * 3 + 2] = newData;
+        }
+
+        return data;
+    }
+
 
 }

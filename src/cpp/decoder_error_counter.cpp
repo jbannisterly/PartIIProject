@@ -30,10 +30,12 @@ double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) 
 }
 
 int main(){
-    const int _BIT_DEPTH = 8;
+    const int _BIT_DEPTH = 1;
+
+    BarcodeConfig config(200, 150);
 
     Mat image = imread("output/img/output_align.png");
-    BarcodeLayout layout = GetBarcode4Detailed();
+    BarcodeLayout layout = GetBarcode4Circle(config);
     int nPixels = (GetCapacity(layout) / 8) * 8;
 
     int channels = image.channels();
@@ -43,7 +45,8 @@ int main(){
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-    imageBytes = ColourCorrection::MethodAverage(imageBytes, layout);
+    // imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, true);
+    
 
     Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
     imwrite("output/img/output_corrected.png", correctedImage);
@@ -55,6 +58,10 @@ int main(){
 
     std::vector<std::vector<uint8_t>> recoveredData = colourPix.PixelsToData(rawData, 0, nPixels / 8);
     std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, _BIT_DEPTH * 3);
+
+    for (int i = 0; i < 100; i++) {
+        std::cout << int(recoveredData[0][i]) <<  " "  << int(trueData[0][i]) << std::endl;
+    }
 
     std::vector<double> accuracy;
     accuracy.reserve(trueData.size());
