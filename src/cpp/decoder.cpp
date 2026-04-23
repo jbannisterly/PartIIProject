@@ -46,6 +46,7 @@ int main(int argc, char *argv[]){
         std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
 
         int compressedLen = HeaderData::GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
+        bool compressionUsed = HeaderData::GetCompressedFlag(rawData, colourPix, errorCorrectors[0]);
         int nPixels = HeaderData::GetErrorCorrectionLen(compressedLen, errorCorrectors);
 
         std::vector<std::vector<uint8_t>> splitData = colourPix.PixelsToData(rawData, 0, nPixels);
@@ -55,11 +56,18 @@ int main(int argc, char *argv[]){
 
         std::cout << splitError.GetErrorCount() << " errors" << std::endl;
 
-        std::vector<uint8_t> connectedData = SplitBytes::Decode(correctedSplitData, compressedLen + 2);
+        std::vector<uint8_t> connectedData = SplitBytes::Decode(correctedSplitData, compressedLen + 3);
 
         std::cout << connectedData.size() << " length" << std::endl;
 
-        std::vector<uint8_t> decompressed = Compression::decompress(connectedData.data() + 2, compressedLen); 
+
+        std::vector<uint8_t> decompressed;
+        
+        if (compressionUsed) {
+            decompressed = Compression::decompress(connectedData.data() + 3, compressedLen); 
+        } else {
+            decompressed = std::vector<uint8_t>(connectedData.begin() + 3, connectedData.end());
+        }
 
         std::cout << decompressed.size() << " length 2" << std::endl;
 
@@ -69,6 +77,6 @@ int main(int argc, char *argv[]){
         std::cout << std::endl;
 
     } catch (const ExceptionDecompression& e){
-        std::cout << e.what() << std::endl;
+        std::cout << e.what() << std::endl; 
     }
 }

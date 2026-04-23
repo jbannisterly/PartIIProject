@@ -2,8 +2,17 @@
 
 namespace HeaderData {
 
-    void PrependLength(std::vector<uint8_t> &data) {
+    void PrependLength(std::vector<uint8_t> &data, bool compressed) {
+        uint8_t compressedFlag;
+
+        if (compressed) {
+            compressedFlag = 255;
+        } else {
+            compressedFlag = 0;
+        }
+
         data.insert(data.begin(), {
+            compressedFlag,
             (uint8_t)((data.size() >> 0) & 255),
             (uint8_t)((data.size() >> 8) & 255)
         });
@@ -25,7 +34,21 @@ namespace HeaderData {
         std::vector<std::vector<uint8_t>> header = colourPix.PixelsToData(pixels, 0, errorCorrection->getBlockLen());
         std::vector<uint8_t> headerCorrected = errorCorrection->Decode(header[0]);
     
-        return ((int)headerCorrected[0] | ((int)headerCorrected[1]) << 8);
+        return ((int)headerCorrected[1] | ((int)headerCorrected[2]) << 8);
+    }
+
+    bool GetCompressedFlag(std::vector<uint8_t> &pixels, ColourPixels colourPix, ErrorCorrectionVirtual* errorCorrection) {
+        std::vector<std::vector<uint8_t>> header = colourPix.PixelsToData(pixels, 0, errorCorrection->getBlockLen());
+        std::vector<uint8_t> headerCorrected = errorCorrection->Decode(header[0]);
+    
+        int setBits = 0;
+        for (int i = 0; i < 8; i++) {
+            if (((headerCorrected[0] >> i) & 1) == 1) {
+                setBits++;
+            }
+        }
+
+        return setBits > 4;
     }
 
 }

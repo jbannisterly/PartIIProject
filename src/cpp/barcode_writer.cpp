@@ -27,6 +27,10 @@ std::vector<int> RandomPermutation(int size, int seed) {
 std::vector<uint8_t> ShufflePixels(std::vector<uint8_t> &pixels, std::vector<int> &permutation) {
     std::vector<uint8_t> shuffled;
     shuffled.resize(permutation.size() * 3, 0);
+
+    for (int i = 0; i < shuffled.size(); i++) {
+        shuffled[i] = 255;
+    }
     
     for (int i = 0; i < permutation.size(); i++) {
         int index = permutation[i];
@@ -72,7 +76,7 @@ std::vector<uint8_t> BarcodeWriter::PixelsToBarcode(std::vector<uint8_t> &pixels
     for (int i = 0; i < layout.mask.size(); i++) {
         if (layout.mask[i] > 0) {
             for (int j = 0; j < 3; j++) {
-                layout.data[i * 3 + j] = (i * 92 + j * 180) % 256;
+                layout.data[i * 3 + j] = 255;
             }
         }
     }

@@ -7,7 +7,8 @@
 #include "error_correction_schifra.hpp"
 
 namespace HeaderData {
-    void PrependLength(std::vector<uint8_t> &data);
+    void PrependLength(std::vector<uint8_t> &data, bool compressed);
     int GetErrorCorrectionLen(int compressedLen, std::vector<ErrorCorrectionVirtual*> &errorCorrectors);
     int GetCompressedLen(std::vector<uint8_t> &pixels, ColourPixels colourPix, ErrorCorrectionVirtual* errorCorrection);
+    bool GetCompressedFlag(std::vector<uint8_t> &pixels, ColourPixels colourPix, ErrorCorrectionVirtual* errorCorrection);
 }
