@@ -11,7 +11,7 @@ e2e:
 	./output/bin/E2E
 
 decoder:
-	g++ -g  -Ilibs/ -o output/bin/Decoder src/cpp/decoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp src/cpp/barcode_image_editor.cpp `pkg-config --cflags --libs opencv4 zlib`
+	g++ -g  -Ilibs/ -o output/bin/Decoder src/cpp/decoder.cpp src/cpp/barcode_layout.cpp src/cpp/image_aux.cpp src/cpp/compressor.cpp src/cpp/colours.cpp src/cpp/split_error.cpp src/cpp/split_bytes.cpp src/cpp/barcode_writer.cpp src/cpp/colour_palletes.cpp src/cpp/error_layout.cpp src/cpp/header_data.cpp src/cpp/barcode_image_editor.cpp src/cpp/colour_correction.cpp `pkg-config --cflags --libs opencv4 zlib`
 	./output/bin/Decoder
 
 encoder:

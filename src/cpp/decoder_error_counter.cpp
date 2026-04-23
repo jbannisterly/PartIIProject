@@ -29,12 +29,12 @@ double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) 
     return (double)count / original.size() / 8;
 }
 
-int main(){
-    const int _BIT_DEPTH = 1;
-
+void RunTest(std::string path, int bitDepth) {
     BarcodeConfig config(200, 150);
 
-    Mat image = imread("output/img/output_align.png");
+    std::cout << path << std::endl;
+
+    Mat image = imread(path);
     BarcodeLayout layout = GetBarcode4Circle(config);
     int nPixels = (GetCapacity(layout) / 8) * 8;
 
@@ -46,7 +46,6 @@ int main(){
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
     // imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, true);
-    
 
     Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
     imwrite("output/img/output_corrected.png", correctedImage);
@@ -54,14 +53,10 @@ int main(){
     BarcodeWriter writer(layout);
     std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
-    ColourPixels colourPix(_BIT_DEPTH);
+    ColourPixels colourPix(bitDepth);
 
     std::vector<std::vector<uint8_t>> recoveredData = colourPix.PixelsToData(rawData, 0, nPixels / 8);
-    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, _BIT_DEPTH * 3);
-
-    for (int i = 0; i < 100; i++) {
-        std::cout << int(recoveredData[0][i]) <<  " "  << int(trueData[0][i]) << std::endl;
-    }
+    std::vector<std::vector<uint8_t>> trueData = RandomDataGen::GenerateRandomData(100, nPixels / 8, bitDepth * 3);
 
     std::vector<double> accuracy;
     accuracy.reserve(trueData.size());
@@ -70,7 +65,7 @@ int main(){
     }
 
     for (int i = 0; i < accuracy.size(); i++) {
-        std::cout << accuracy[i] << std::endl;
+        // std::cout << accuracy[i] << std::endl;
     }
 
     double capacity = 0;
@@ -78,4 +73,16 @@ int main(){
         capacity += 1 - ((1 - accuracy[i]) * 2);
     }
     std::cout << "bits per pixel " << capacity << std::endl;
+
+}
+
+int main(){
+
+    for (int i = 1; i <= 8; i++) {
+        RunTest("output/img/evaluation/colour_test/photo_indoors_" + std::to_string(i) + "_bits_align.png", i);
+        RunTest("output/img/evaluation/colour_test/photo_outdoors_" + std::to_string(i) + "_bits_align.png", i);
+        RunTest("output/img/evaluation/colour_test/photo_lamp_" + std::to_string(i) + "_bits_align.png", i);
+        RunTest("output/img/evaluation/colour_test/photo_flash_" + std::to_string(i) + "_bits_align.png", i);
+    }
+
 }

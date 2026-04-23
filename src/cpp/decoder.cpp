@@ -11,6 +11,7 @@
 #include "colour_palletes.hpp"
 #include "error_layout.hpp"
 #include "header_data.hpp"
+#include "colour_correction.hpp"
 
 using namespace cv;
 
@@ -23,7 +24,6 @@ int main(int argc, char *argv[]){
     }
 
     try {
-        BarcodeConfig config(100, 100);
         Mat image = imread(path);
 
         int channels = image.channels();
@@ -31,9 +31,15 @@ int main(int argc, char *argv[]){
         int cols = image.cols;
         int totalLength = rows * cols;
 
+        BarcodeConfig config(rows, cols);
+        BarcodeLayout layout = GetBarcode4Circle(config);
+
+
         std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-        BarcodeWriter writer(GetBarcode4Detailed(config));
+        // imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, true);
+
+        BarcodeWriter writer(layout);
         std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
         ColourPixels colourPix = ColourPalletes::Bit_3();
