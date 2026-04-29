@@ -12,14 +12,14 @@ namespace Alignment {
         std::vector<FinderGroup> finderGroup;
 
         for (int i = 0; i < candidates.size(); i++){
-            int j = 0;
+            int j = finderGroup.size() - 1;
             bool newNeeded = true;
-            while(j < finderGroup.size()){
+            while(j >= 0){
                 if (finderGroup[j].TryAddCandidate(candidates[i])){
-                    j = finderGroup.size();
+                    j = 0;
                     newNeeded = false;
                 }
-                j++;
+                j--;
             }
             if (newNeeded) {
                 FinderGroup newGroup = FinderGroup();
@@ -142,7 +142,7 @@ namespace Alignment {
         std::vector<int> finderGroupsValidIndex;
 
         for (int i = 0; i < finderGroups.size(); i++){
-            bool valid = finderGroups[i].isValid(threshold, inputImage.cols, inputImage.rows, patternSize, patternValid, firstWhite);
+            bool valid = finderGroups[i].size() > 1 && finderGroups[i].isValid(threshold, inputImage.cols, inputImage.rows, patternSize, patternValid, firstWhite);
             if (valid){
                 finderGroupsValidIndex.push_back(i);
             }
