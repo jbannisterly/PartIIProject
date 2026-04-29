@@ -32,7 +32,6 @@ double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) 
 void RunTest(std::string path, int bitDepth) {
     BarcodeConfig config(200, 150);
 
-    std::cout << path << std::endl;
 
     Mat image = imread(path);
     BarcodeLayout layout = GetBarcode4Circle(config);
@@ -45,7 +44,7 @@ void RunTest(std::string path, int bitDepth) {
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-    // imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, true);
+    imageBytes = ColourCorrection::MethodQuartersAverage(imageBytes, layout, true);
 
     Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
     imwrite("output/img/output_corrected.png", correctedImage);
@@ -72,7 +71,7 @@ void RunTest(std::string path, int bitDepth) {
     for (int i = 0; i < accuracy.size(); i++) {
         capacity += 1 - ((1 - accuracy[i]) * 2);
     }
-    std::cout << "bits per pixel " << capacity << std::endl;
+    std::cout << "\"" << path << "\"" << ":"  << capacity << "," << std::endl;
 
 }
 

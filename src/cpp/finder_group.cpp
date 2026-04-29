@@ -15,7 +15,7 @@ Position FinderGroup::VerticalOffset(){
 }
 
     // Get rectangle around candidates to check for finder pattern
-VerticalData FinderGroup::VerticalSample(std::vector<uint8_t> data, int dataX, int dataY){
+VerticalData FinderGroup::VerticalSample(std::vector<uint8_t> &data, int dataX, int dataY){
     FinderCandidate centre = Centre();
     Position offset = VerticalOffset();
     int startX = offset.x;
@@ -74,7 +74,7 @@ bool FinderGroup::TryAddCandidate(FinderCandidate toAdd){
     return true;
 }
 
-bool FinderGroup::isValid(std::vector<uint8_t> threshold, int dataX, int dataY, int patternSize, std::function<bool (std::vector<int>)> patternValid, bool firstWhite){
+bool FinderGroup::isValid(std::vector<uint8_t> &threshold, int dataX, int dataY, int patternSize, std::function<bool (std::vector<int>)> patternValid, bool firstWhite){
     VerticalData vertical = VerticalSample(threshold, dataX, dataY);
 
     if (vertical.data.size() == 0) return false;

@@ -24,19 +24,19 @@ int main(int argc, char *argv[]){
 
     bool compression = false;
 
-    if (argc > 1) {
-        message = std::string(argv[1]);
-    }
-    if (argc > 2) {
-        outputPath = std::string(argv[2]);
-    }
-    if (argc > 3) {
-        for (int i = 3; i < argc; i++) {
-            if (argv[i] == "-c") {
-                compression = true;
-            }
+    for (int i = 0; i < argc; i++) {
+        std::string currentArg = std::string(argv[i]);
+        if (currentArg == "-c") {
+            compression = true;
+        } else if (currentArg == "-m") {
+            message = std::string(argv[i + 1]);
+        } else if (currentArg == "-p") {
+            outputPath = std::string(argv[i + 1]);
+        } else if (currentArg == "-s") {
+            config = BarcodeConfig(std::stoi(argv[i+1]), std::stoi(argv[i+2]));
         }
     }
+
     std::cout << message << std::endl;
     std::cout << "Message length: " << message.size() << std::endl;
 
@@ -64,9 +64,9 @@ int main(int argc, char *argv[]){
 
     std::vector<uint8_t> pixelData = colourPix.DataToPixels(errorSplitData);
 
-    BarcodeWriter writer(GetBarcode4Circle(config));
+    BarcodeWriter writer(GetBarcode3(config));
     int scale = 8;
-    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, scale, true);
+    std::vector<uint8_t> imageData = writer.PixelsToBarcode(pixelData, scale, false);
     std::cout << imageData.size() << std::endl;
 
     Mat image(config.barcodeHeight * scale, config.barcodeWidth * scale, CV_8UC3, imageData.data());

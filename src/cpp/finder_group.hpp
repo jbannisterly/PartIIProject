@@ -15,11 +15,11 @@ class FinderGroup{
     Position VerticalOffset();
 
     // Get rectangle around candidates to check for finder pattern
-    VerticalData VerticalSample(std::vector<uint8_t> data, int dataX, int dataY);
+    VerticalData VerticalSample(std::vector<uint8_t> &data, int dataX, int dataY);
     std::vector<FinderCandidate> FinderPatternVertical(int patternSize, VerticalData vertical, std::function<bool (std::vector<int>)> patternValid, bool firstWhite);
 
     public:
     bool TryAddCandidate(FinderCandidate toAdd);
-    bool isValid(std::vector<uint8_t> threshold, int dataX, int dataY, int patternSize, std::function<bool (std::vector<int>)> patternValid, bool firstWhite);
+    bool isValid(std::vector<uint8_t> &threshold, int dataX, int dataY, int patternSize, std::function<bool (std::vector<int>)> patternValid, bool firstWhite);
     int size();
 };

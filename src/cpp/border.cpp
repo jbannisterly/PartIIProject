@@ -269,8 +269,8 @@ Border::Border GetBorder(std::vector<uint8_t> &threshold, int width, std::vector
         Border::Coord visiting = toVisit[toVisit.size() - 1];
         toVisit.pop_back();
 
-        if (valid.at(visiting.Index()) && threshold.at(visiting.Index()) == originalColour) {
-            valid.at(visiting.Index()) = false;
+        if (valid[visiting.Index()] && threshold[visiting.Index()] == originalColour) {
+            valid[visiting.Index()] = false;
             border.push_back(visiting);
 
             if (visiting.x < width - 1) toVisit.push_back(Border::Coord(visiting.x + 1, visiting.y, width));

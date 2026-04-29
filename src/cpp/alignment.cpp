@@ -15,7 +15,7 @@ namespace Alignment {
             int j = 0;
             bool newNeeded = true;
             while(j < finderGroup.size()){
-                if (finderGroup.at(j).TryAddCandidate(candidates[i])){
+                if (finderGroup[j].TryAddCandidate(candidates[i])){
                     j = finderGroup.size();
                     newNeeded = false;
                 }
@@ -23,7 +23,7 @@ namespace Alignment {
             }
             if (newNeeded) {
                 FinderGroup newGroup = FinderGroup();
-                newGroup.TryAddCandidate(candidates.at(i));
+                newGroup.TryAddCandidate(candidates[i]);
                 finderGroup.push_back(newGroup);
             }
         }
@@ -137,27 +137,8 @@ namespace Alignment {
     }
 
     int GLOBAL_DEBUG_COUNTER = 0;
-
-    std::vector<FinderCandidate> GetAlignmentCentres(int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre, std::optional<DebugImage*> debug={}) {
     
-        std::vector<FinderCandidate> finder = FinderPatterns::FinderPatterns(patternSize, threshold, inputImage.rows, inputImage.cols, patternValid, firstWhite);
-
-        std::vector<FinderGroup> finderGroups = GroupFinders(finder);
-
-        if (firstWhite) {
-
-            int max = 0;
-            int maxind = 0;
-            for (int i = 0; i < finderGroups.size(); i++) {
-                if (finderGroups[i].size() > max) {
-                    max = finderGroups[i].size();
-                    maxind = i;
-                }
-            }
-            finderGroups[maxind].isValid(threshold, inputImage.cols, inputImage.rows, patternSize, patternValid, firstWhite);
-        }
-
-
+    std::vector<int> GetFinderGroupsValidIndex(std::vector<FinderGroup> &finderGroups, std::vector<uint8_t> &threshold, int patternSize, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite) {
         std::vector<int> finderGroupsValidIndex;
 
         for (int i = 0; i < finderGroups.size(); i++){
@@ -166,6 +147,11 @@ namespace Alignment {
                 finderGroupsValidIndex.push_back(i);
             }
         }
+
+        return finderGroupsValidIndex;
+    }
+
+    std::vector<FinderCandidate> GetAlignmentCentres(std::vector<FinderGroup> &finderGroups, std::vector<int> &finderGroupsValidIndex, int patternSize, std::vector<uint8_t> &threshold, std::vector<uint8_t> &data, cv::Mat inputImage, std::function<bool (std::vector<int>)> patternValid, bool firstWhite, std::vector<FinderCandidate> estimatedCentre, std::optional<DebugImage*> debug={}) {
 
         int quality[finderGroups.size()];
 
@@ -242,10 +228,17 @@ namespace Alignment {
 
         Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
-        std::vector<FinderCandidate> centres0 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(1, 0, 0)});
-        std::vector<FinderCandidate> centres1 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0)});
-        std::vector<FinderCandidate> centres2 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 1, 0)});
-        std::vector<FinderCandidate> centres3 = GetAlignmentCentres(5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)});
+        std::vector<FinderCandidate> finderPrecompute = FinderPatterns::FinderPatterns(5, threshold, inputImage.rows, inputImage.cols, PatternValid::PatternStandard, false);
+        std::vector<FinderCandidate> finderPrecomputeAlternate = FinderPatterns::FinderPatterns(5, threshold, inputImage.rows, inputImage.cols, PatternValid::PatternStandard, true);
+        std::vector<FinderGroup> finderGroupPrecompute = GroupFinders(finderPrecompute);
+        std::vector<FinderGroup> finderGroupPrecomputeAlternate = GroupFinders(finderPrecomputeAlternate);
+        std::vector<int> finderValidIndexPrecompute = GetFinderGroupsValidIndex(finderGroupPrecompute, threshold, 5, inputImage, PatternValid::PatternStandard, false);
+        std::vector<int> finderValidIndexPrecomputeAlternate = GetFinderGroupsValidIndex(finderGroupPrecomputeAlternate, threshold, 5, inputImage, PatternValid::PatternStandard, true);
+
+        std::vector<FinderCandidate> centres0 = GetAlignmentCentres(finderGroupPrecompute, finderValidIndexPrecompute, 5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(1, 0, 0)});
+        std::vector<FinderCandidate> centres1 = GetAlignmentCentres(finderGroupPrecompute, finderValidIndexPrecompute, 5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0)});
+        std::vector<FinderCandidate> centres2 = GetAlignmentCentres(finderGroupPrecompute, finderValidIndexPrecompute, 5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 1, 0)});
+        std::vector<FinderCandidate> centres3 = GetAlignmentCentres(finderGroupPrecomputeAlternate, finderValidIndexPrecomputeAlternate, 5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)});
 
         std::array<FinderCandidate, 3> centresOrdered = {centres0[0], centres1[0], centres2[0]};
         std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres3[0]);
@@ -346,7 +339,7 @@ namespace Alignment {
         Mat outputImage;
 
         std::filesystem::create_directory(debugDirectory);
-        AlignmentData alignment = GetBounds(inputImage, debugDirectory + "/");
+        AlignmentData alignment = GetBounds(inputImage, ""); // debugDirectory + "/"
         std::array<Vec3, 4> bounds = alignment.bounds;
         alignment.estimatedHeight = GetClosestSize(projectionHeight, alignment.estimatedHeight);
         alignment.estimatedWidth = GetClosestSize(projectionHeight, alignment.estimatedWidth);
