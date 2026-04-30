@@ -280,8 +280,8 @@ Border::Border GetBorder(std::vector<uint8_t> &threshold, int width, std::vector
         }
     }
 
-    std::vector<Border::Coord> reduced = ReduceBorder(border, width);
-    // std::vector<Border::Coord> reduced = border;
+    // std::vector<Border::Coord> reduced = ReduceBorder(border, width);
+    std::vector<Border::Coord> reduced = border;
 
     if (!IsDoughnut(reduced, width)) {
         // std::cout << "Not a doughnut" << std::endl;
@@ -326,6 +326,24 @@ Node BuildTree(std::vector<BoundingBox> &candidates, int width) {
     return parentNode;
 }
 
+void TryAddBorderCandidates(std::vector<int> &borderCandidates, Node &tree) {
+    for (int i = 0; i < tree.children.size(); i++) {
+        int maxDepth = tree.children[i].MaxDepth();
+        if (maxDepth > 1) {
+            if (tree.children[i].children.size() == 1) {
+                if (tree.children[i].parent.boundingWidth < tree.children[i].children[0].parent.boundingWidth * 2) {
+                    if (tree.children[i].parent.boundingHeight < tree.children[i].children[0].parent.boundingHeight * 2) {
+                        borderCandidates.push_back(tree.children[i].originalIndex);
+                    }
+                }
+            }
+        }
+        if (maxDepth > 2) {
+            TryAddBorderCandidates(borderCandidates, tree.children[i]);
+        }
+    }
+}
+
 std::vector<int> Border::GetInside(std::vector<Border> &borders, int width) {
     std::vector<BoundingBox> candidates;
     candidates.reserve(borders.size());
@@ -346,18 +364,7 @@ std::vector<int> Border::GetInside(std::vector<Border> &borders, int width) {
 
     std::vector<int> deepNodes;
 
-    for (int i = 0; i < tree.children.size(); i++) {
-        int maxDepth = tree.children[i].MaxDepth();
-        if (maxDepth > 1) {
-            if (tree.children[i].children.size() == 1) {
-                if (tree.children[i].parent.boundingWidth < tree.children[i].children[0].parent.boundingWidth * 2) {
-                    if (tree.children[i].parent.boundingHeight < tree.children[i].children[0].parent.boundingHeight * 2) {
-                        deepNodes.push_back(tree.children[i].originalIndex);
-                    }
-                }
-            }
-        }
-    }
+    TryAddBorderCandidates(deepNodes, tree);
 
     return deepNodes;
 }
@@ -369,6 +376,7 @@ std::vector<FinderCandidate> SortFinders(std::vector<FinderCandidate> unsorted) 
 
     for (int i = 0; i < unsorted.size(); i++) {
         int score = unsorted[i].y - unsorted[i].x;
+        score += unsorted[i].width * 8;
 
         if (score > bestScore) {
             bestIndex = i;
@@ -380,6 +388,7 @@ std::vector<FinderCandidate> SortFinders(std::vector<FinderCandidate> unsorted) 
     bestScore = -1000;
     for (int i = 0; i < unsorted.size(); i++) {
         int score = -unsorted[i].y - unsorted[i].x;
+        score += unsorted[i].width * 8;
 
         if (score > bestScore) {
             bestIndex = i;
@@ -391,6 +400,7 @@ std::vector<FinderCandidate> SortFinders(std::vector<FinderCandidate> unsorted) 
     bestScore = -1000;
     for (int i = 0; i < unsorted.size(); i++) {
         int score = -unsorted[i].y + unsorted[i].x;
+        score += unsorted[i].width * 8;
 
         if (score > bestScore) {
             bestIndex = i;
@@ -402,6 +412,7 @@ std::vector<FinderCandidate> SortFinders(std::vector<FinderCandidate> unsorted) 
     bestScore = -1000;
     for (int i = 0; i < unsorted.size(); i++) {
         int score = +unsorted[i].y + unsorted[i].x;
+        score += unsorted[i].width * 8;
 
         if (score > bestScore) {
             bestIndex = i;
