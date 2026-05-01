@@ -216,7 +216,7 @@ namespace Alignment {
     }
 
 
-    AlignmentData GetBounds(Mat inputImage, std::string debugDirectory) {
+    AlignmentData GetBounds(Mat inputImage, std::string debugDirectory, PatternType pattern) {
         AlignmentData alignmentData;
     
         int nPixels = inputImage.cols * inputImage.rows;
@@ -229,19 +229,55 @@ namespace Alignment {
         Mat thresholdImage(inputImage.rows, inputImage.cols, CV_8U, threshold.data());
     
         std::vector<FinderCandidate> finderPrecompute = FinderPatterns::FinderPatterns(5, threshold, inputImage.rows, inputImage.cols, PatternValid::PatternStandard, false);
-        std::vector<FinderCandidate> finderPrecomputeAlternate = FinderPatterns::FinderPatterns(5, threshold, inputImage.rows, inputImage.cols, PatternValid::PatternStandard, true);
         std::vector<FinderGroup> finderGroupPrecompute = GroupFinders(finderPrecompute);
-        std::vector<FinderGroup> finderGroupPrecomputeAlternate = GroupFinders(finderPrecomputeAlternate);
         std::vector<int> finderValidIndexPrecompute = GetFinderGroupsValidIndex(finderGroupPrecompute, threshold, 5, inputImage, PatternValid::PatternStandard, false);
-        std::vector<int> finderValidIndexPrecomputeAlternate = GetFinderGroupsValidIndex(finderGroupPrecomputeAlternate, threshold, 5, inputImage, PatternValid::PatternStandard, true);
+
+        std::vector<FinderCandidate> finderPrecomputeAlternate;
+        std::vector<FinderGroup> finderGroupPrecomputeAlternate;
+        std::vector<int> finderValidIndexPrecomputeAlternate;
+
+        switch(pattern) {
+            case PatternType::CIRCLE:
+            case PatternType::DETAILED:
+                finderPrecomputeAlternate = FinderPatterns::FinderPatterns(5, threshold, inputImage.rows, inputImage.cols, PatternValid::PatternStandard, true);
+                finderGroupPrecomputeAlternate = GroupFinders(finderPrecomputeAlternate);
+                finderValidIndexPrecomputeAlternate = GetFinderGroupsValidIndex(finderGroupPrecomputeAlternate, threshold, 5, inputImage, PatternValid::PatternStandard, true);
+                break;
+            case PatternType::SIMPLE:
+                finderPrecomputeAlternate = FinderPatterns::FinderPatterns(3, threshold, inputImage.rows, inputImage.cols, PatternValid::PatternSmall, true);
+                finderGroupPrecomputeAlternate = GroupFinders(finderPrecomputeAlternate);
+                finderValidIndexPrecomputeAlternate = GetFinderGroupsValidIndex(finderGroupPrecomputeAlternate, threshold, 3, inputImage, PatternValid::PatternSmall, true);
+                break;
+        }
+
 
         std::vector<FinderCandidate> centres0 = GetAlignmentCentres(finderGroupPrecompute, finderValidIndexPrecompute, 5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(1, 0, 0)});
         std::vector<FinderCandidate> centres1 = GetAlignmentCentres(finderGroupPrecompute, finderValidIndexPrecompute, 5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 0, 0)});
         std::vector<FinderCandidate> centres2 = GetAlignmentCentres(finderGroupPrecompute, finderValidIndexPrecompute, 5, threshold, data, inputImage, PatternValid::PatternStandard, false, {FinderCandidate(0, 1, 0)});
-        std::vector<FinderCandidate> centres3 = GetAlignmentCentres(finderGroupPrecomputeAlternate, finderValidIndexPrecomputeAlternate, 5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)});
-
         std::array<FinderCandidate, 3> centresOrdered = {centres0[0], centres1[0], centres2[0]};
-        std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres3[0]);
+        std::array<Vec3, 4> bounds;
+        std::vector<FinderCandidate> centres3;
+
+
+        switch (pattern) {
+            case PatternType::CIRCLE:
+            case PatternType::DETAILED:
+                centres3 = GetAlignmentCentres(finderGroupPrecomputeAlternate, finderValidIndexPrecomputeAlternate, 5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)});
+                bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres3[0]);
+                break;
+            case PatternType::SIMPLE:
+                centres3 = GetAlignmentCentres(finderGroupPrecomputeAlternate, finderValidIndexPrecomputeAlternate, 5, threshold, data, inputImage, PatternValid::PatternStandard, true, {FinderCandidate(1., 1., 0.)});
+                bounds = BoundingBox::BoundingBoxSimple(centresOrdered, centres3[0]);
+                break;
+            case PatternType::THREE:
+                FinderCandidate estimateCentre3;
+                estimateCentre3.x = centresOrdered[0].x - centresOrdered[1].x + centresOrdered[2].x;
+                estimateCentre3.y = centresOrdered[0].y - centresOrdered[1].y + centresOrdered[2].y;
+                estimateCentre3.width = centresOrdered[0].width / centresOrdered[1].width * centresOrdered[2].width;
+                centres3 = {estimateCentre3};
+                bounds = BoundingBox::BoundingBox(centresOrdered);
+                break;
+        }
 
         alignmentData.bounds = bounds;
 
@@ -335,11 +371,11 @@ namespace Alignment {
         return bestSize;
     }
 
-    Mat AlignImage(Mat inputImage, std::vector<int> &projectionHeight, std::vector<int> &projectionWidth, double fractionExpand, std::string debugDirectory, int projectionScale){
+    Mat AlignImage(Mat inputImage, std::vector<int> &projectionHeight, std::vector<int> &projectionWidth, double fractionExpand, std::string debugDirectory, int projectionScale, PatternType patternType){
         Mat outputImage;
 
         std::filesystem::create_directory(debugDirectory);
-        AlignmentData alignment = GetBoundsBorderMethod(inputImage, debugDirectory + "/");
+        AlignmentData alignment = GetBounds(inputImage, "", patternType); // disable debugging for now
         std::array<Vec3, 4> bounds = alignment.bounds;
         alignment.estimatedHeight = GetClosestSize(projectionHeight, alignment.estimatedHeight);
         alignment.estimatedWidth = GetClosestSize(projectionHeight, alignment.estimatedWidth);

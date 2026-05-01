@@ -43,6 +43,8 @@ std::vector<uint8_t> DebugImage::BackgroundImage(std::vector<uint8_t> &data){
 }
 
 void DebugImage::WriteImage(std::string path, std::vector<uint8_t> &background) {
+    std::cout << "Attempting to write to " << path << std::endl;
+
     std::vector<uint8_t> output = BackgroundImage(background);
 
     cv::Mat debugMat(height, width, CV_8UC3, output.data());
@@ -51,4 +53,6 @@ void DebugImage::WriteImage(std::string path, std::vector<uint8_t> &background) 
         std::cout << "debugg ing image print" << std::endl;
         cv::imwrite(path, debugMat);
     }
+
+    std::cout << "Written to " << path << std::endl;
 }

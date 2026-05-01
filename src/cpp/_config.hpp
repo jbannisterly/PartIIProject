@@ -15,3 +15,7 @@ struct BarcodeConfig {
         barcodeWidth = inBarcodeWidth;
     }
 };
+
+enum PatternType {
+    THREE, SIMPLE, DETAILED, CIRCLE
+};

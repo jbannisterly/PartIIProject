@@ -80,6 +80,26 @@ namespace BoundingBox {
         return bounds;
     }
 
+    std::array<Vec3, 4> BoundingBoxSimple(std::array<FinderCandidate, 3> finders, FinderCandidate finder4){
+        const double MODULEOFFSET = 4;
+
+        std::array<Vec3, 4> findersVec;
+        std::array<Vec3, 4> bounds;
+    
+        for (int i = 0; i < 3; i++){
+            findersVec[i] = Vec3(finders[i].x, finders[i].y, 0);
+        }   
+        findersVec[3] = Vec3(finder4.x, finder4.y, 0);
+
+        bounds[0] = findersVec[0] + ((findersVec[0] - findersVec[1]).Normalise() + (findersVec[0] - findersVec[3]).Normalise()) * finders[0].width * (MODULEOFFSET / 7);
+        bounds[1] = findersVec[1] + ((findersVec[1] - findersVec[2]).Normalise() + (findersVec[1] - findersVec[0]).Normalise()) * finders[1].width * (MODULEOFFSET / 7);
+        bounds[2] = findersVec[2] + ((findersVec[2] - findersVec[3]).Normalise() + (findersVec[2] - findersVec[1]).Normalise()) * finders[2].width * (MODULEOFFSET / 7);
+        bounds[3] = findersVec[3] + ((findersVec[3] - findersVec[0]).Normalise() + (findersVec[3] - findersVec[2]).Normalise()) * finder4.width * (MODULEOFFSET / 5);
+
+        return bounds;
+    }
+
+
     std::array<Vec3, 4> ExpansionBox(std::array<Vec3, 4> initialBounds, double expansionFactor){
         std::array<Vec3, 4> bounds;
 
