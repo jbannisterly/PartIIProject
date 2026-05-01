@@ -299,7 +299,7 @@ namespace Alignment {
         return alignmentData;
     }
 
-    AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugDirectory) {
+    AlignmentData GetBoundsBorderMethod(Mat inputImage, std::string debugDirectory, PatternType pattern) {
         GLOBAL_DEBUG_COUNTER++;
 
         AlignmentData alignmentData;
@@ -329,7 +329,27 @@ namespace Alignment {
 
         std::vector<FinderCandidate> centres = Border::Finders(borders, deepBorderIndex, inputImage.cols);
         std::array<FinderCandidate, 3> centresOrdered = {centres[0], centres[1], centres[2]};
-        std::array<Vec3, 4> bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres[3]);
+        
+        std::array<Vec3, 4> bounds;
+
+        switch(pattern) {
+            case PatternType::CIRCLE:
+            case PatternType::DETAILED:
+                bounds = BoundingBox::BoundingBoxRectangle(centresOrdered, centres[3]);
+                break;
+            case PatternType::SIMPLE:
+                bounds = BoundingBox::BoundingBoxSimple(centresOrdered, centres[3]);
+                break;
+            case PatternType::THREE:
+                FinderCandidate estimateCentre3;
+                estimateCentre3.x = centresOrdered[0].x - centresOrdered[1].x + centresOrdered[2].x;
+                estimateCentre3.y = centresOrdered[0].y - centresOrdered[1].y + centresOrdered[2].y;
+                estimateCentre3.width = centresOrdered[0].width / centresOrdered[1].width * centresOrdered[2].width;
+                centres[3] = estimateCentre3;
+                bounds = BoundingBox::BoundingBox(centresOrdered);
+                break;
+        }
+
 
         alignmentData.bounds = bounds;
 
@@ -375,7 +395,7 @@ namespace Alignment {
         Mat outputImage;
 
         std::filesystem::create_directory(debugDirectory);
-        AlignmentData alignment = GetBounds(inputImage, "", patternType); // disable debugging for now
+        AlignmentData alignment = GetBoundsBorderMethod(inputImage, "", patternType); // disable debugging for now
         std::array<Vec3, 4> bounds = alignment.bounds;
         alignment.estimatedHeight = GetClosestSize(projectionHeight, alignment.estimatedHeight);
         alignment.estimatedWidth = GetClosestSize(projectionHeight, alignment.estimatedWidth);
