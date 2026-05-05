@@ -34,7 +34,7 @@ void RunTest(std::string path, int bitDepth) {
 
 
     Mat image = imread(path);
-    BarcodeLayout layout = GetBarcode4Circle(config);
+    BarcodeLayout layout = GetBarcode4Detailed(config);
     int nPixels = (GetCapacity(layout) / 8) * 8;
 
     int channels = image.channels();
@@ -44,7 +44,7 @@ void RunTest(std::string path, int bitDepth) {
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-    imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, true);
+    imageBytes = ColourCorrection::MethodQuartersAverage(imageBytes, layout, true);
 
     Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
     imwrite("output/img/output_corrected.png", correctedImage);
