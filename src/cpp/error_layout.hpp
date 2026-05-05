@@ -5,4 +5,5 @@
 
 namespace ErrorLayout {
     std::vector<ErrorCorrectionVirtual*> Bit_3();
+    std::vector<ErrorCorrectionVirtual*> Bit_9();
 }

@@ -395,7 +395,7 @@ namespace Alignment {
         Mat outputImage;
 
         std::filesystem::create_directory(debugDirectory);
-        AlignmentData alignment = GetBoundsBorderMethod(inputImage, "", patternType); // disable debugging for now
+        AlignmentData alignment = GetBounds(inputImage, debugDirectory + "/", patternType); // enable debugging for now
         std::array<Vec3, 4> bounds = alignment.bounds;
         alignment.estimatedHeight = GetClosestSize(projectionHeight, alignment.estimatedHeight);
         alignment.estimatedWidth = GetClosestSize(projectionHeight, alignment.estimatedWidth);

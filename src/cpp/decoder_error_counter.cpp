@@ -44,7 +44,7 @@ void RunTest(std::string path, int bitDepth) {
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-    imageBytes = ColourCorrection::MethodQuartersAverage(imageBytes, layout, true);
+    imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, true);
 
     Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
     imwrite("output/img/output_corrected.png", correctedImage);

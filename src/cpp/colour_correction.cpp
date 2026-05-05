@@ -12,7 +12,7 @@ namespace ColourCorrection {
             int ix = i % layout.barcodeWidth;
             int iy = i / layout.barcodeWidth;
             if ((layout.mask[i] == 0 && ix > 0 && ix < layout.barcodeWidth - 1 && iy > 0 && iy < barcodeHeight - 1) || allPixels) {
-                if (layout.data[i * 3] == 255) {
+                if (layout.data[i * 3] == 255 || allPixels) {
                     count++;
                     red += data[i * 3 + 0]; 
                     green += data[i * 3 + 1]; 

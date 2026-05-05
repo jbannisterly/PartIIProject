@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
 
         std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-        // imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, true);
+        // imageBytes = ColourCorrection::MethodHighLowAvg(imageBytes, layout);
 
         BarcodeWriter writer(layout);
         std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
@@ -47,6 +47,7 @@ int main(int argc, char *argv[]){
 
         int compressedLen = HeaderData::GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
         bool compressionUsed = HeaderData::GetCompressedFlag(rawData, colourPix, errorCorrectors[0]);
+        compressionUsed = false;
         int nPixels = HeaderData::GetErrorCorrectionLen(compressedLen, errorCorrectors);
 
         std::vector<std::vector<uint8_t>> splitData = colourPix.PixelsToData(rawData, 0, nPixels);
@@ -76,6 +77,8 @@ int main(int argc, char *argv[]){
         }
         std::cout << std::endl;
 
+        FILE* f = fopen("data_dump", "w");
+        fwrite(&decompressed[0], 1, decompressed.size(), f);
     } catch (const ExceptionDecompression& e){
         std::cout << e.what() << std::endl; 
     }
