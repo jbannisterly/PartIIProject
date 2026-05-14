@@ -98,7 +98,7 @@ TEST(LengthTest, Test1) {
     std::vector<uint8_t> dataCopy = data;
     SplitError split(errorCorrectors);
 
-    HeaderData::PrependLength(dataCopy);
+    HeaderData::PrependLength(dataCopy, true);
     std::vector<std::vector<uint8_t>> splitData = SplitBytes::Encode(dataCopy, errorCorrectors);
     std::vector<uint8_t> pixels = colourPix.DataToPixels(splitData);
 

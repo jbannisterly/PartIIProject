@@ -8,14 +8,16 @@ height {inHeight}
     debugMask.resize(width * height, 0);
 }
 
-void DebugImage::DebugCross(int x, int y, int width, int crossSize, std::array<uint8_t, 3> colour) {
+void DebugImage::DebugCross(int x, int y, int width, int crossSize, int crossWidth, std::array<uint8_t, 3> colour) {
     for (int i = -crossSize; i < crossSize; i++) {
-        for (int j = 0; j < 3; j++) {
-            debugImage[(x + y * width + i) * 3 + j] = colour[j];
-            debugImage[(x + (y + i) * width) * 3 + j] = colour[j];
+        for (int k = -crossWidth; k <= crossWidth; k++) {
+            for (int j = 0; j < 3; j++) {
+                debugImage[(x + (y + k) * width + i) * 3 + j] = colour[j];
+                debugImage[(x + (y + i) * width + k) * 3 + j] = colour[j];
+            }
+            debugMask[(x + (y + k) * width + i)] = 1;
+            debugMask[(x + (y + i) * width + k)] = 1;
         }
-        debugMask[(x + y * width + i)] = 1;
-        debugMask[(x + (y + i) * width)] = 1;
     }
 }
 

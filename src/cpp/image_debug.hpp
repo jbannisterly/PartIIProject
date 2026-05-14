@@ -15,7 +15,7 @@ class DebugImage {
     public:
 
     DebugImage(int inWidth, int inHeight);
-    void DebugCross(int x, int y, int width, int crossSize, std::array<uint8_t, 3> colour = {255, 0, 0});
+    void DebugCross(int x, int y, int width, int crossSize, int crossWidth, std::array<uint8_t, 3> colour = {255, 0, 0});
     void DebugCentre(FinderCandidate finder, std::array<uint8_t, 3> colour = {0, 255, 0});
     std::vector<uint8_t> BackgroundImage(std::vector<uint8_t> &data);
     void WriteImage(std::string path, std::vector<uint8_t> &background);

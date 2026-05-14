@@ -55,11 +55,11 @@ int main(int argc, char *argv[]){
         SplitError splitError(errorCorrectors);
         std::vector<std::vector<uint8_t>> correctedSplitData = splitError.Decode(splitData);
 
-        std::cout << splitError.GetErrorCount() << " errors" << std::endl;
+        std::cout << "Number of errors in decoding: " << splitError.GetErrorCount() << std::endl;
 
         std::vector<uint8_t> connectedData = SplitBytes::Decode(correctedSplitData, compressedLen + 3);
 
-        std::cout << connectedData.size() << " length" << std::endl;
+        std::cout << "Length of compressed message: " << connectedData.size() << std::endl;
 
 
         std::vector<uint8_t> decompressed;
@@ -70,7 +70,9 @@ int main(int argc, char *argv[]){
             decompressed = std::vector<uint8_t>(connectedData.begin() + 3, connectedData.end());
         }
 
-        std::cout << decompressed.size() << " length 2" << std::endl;
+        std::cout << "Length of decompressed message: " << decompressed.size() << std::endl;
+
+        std::cout << "Message: " << std::endl;
 
         for (int i = 0; i < decompressed.size(); i++){
             std::cout << (char)decompressed[i];

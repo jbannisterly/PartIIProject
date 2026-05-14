@@ -185,11 +185,11 @@ namespace Alignment {
 
 
         for (int i = 0; i < centres.size(); i++) {
-            debug.DebugCross(centres[i].x, centres[i].y, inputImage.cols, 20, {0, 0, 255});
+            debug.DebugCross(centres[i].x, centres[i].y, inputImage.cols, 50, 4, {255, 10, 255});
         }
 
         for (int i = 0; i < bounds.size(); i++) {
-            debug.DebugCross(bounds[i].x, bounds[i].y, inputImage.cols, 20, {255, 0, 255});
+            debug.DebugCross(bounds[i].x, bounds[i].y, inputImage.cols, 50, 4, {0, 0, 255});
         }
 
         debug.WriteImage(debugPath, debugbackground);
