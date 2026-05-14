@@ -25,6 +25,7 @@ int main(int argc, char *argv[]){
     message = message;
 
     bool compression = false;
+    bool extraErrorCorrection = false;
 
     for (int i = 0; i < argc; i++) {
         std::string currentArg = std::string(argv[i]);
@@ -36,6 +37,8 @@ int main(int argc, char *argv[]){
             outputPath = std::string(argv[i + 1]);
         } else if (currentArg == "-s") {
             config = BarcodeConfig(std::stoi(argv[i+1]), std::stoi(argv[i+2]));
+        } else if (currentArg == "-ec2") {
+            extraErrorCorrection = true;
         }
     }
 
@@ -52,7 +55,13 @@ int main(int argc, char *argv[]){
     fwrite(&byteData[0], 1, byteData.size(), f);
 
 
-    std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
+    std::vector<ErrorCorrectionVirtual*> errorCorrectors;
+    if (extraErrorCorrection) {
+        errorCorrectors = ErrorLayout::Bit_3_extra();
+    } else {
+        errorCorrectors = ErrorLayout::Bit_3();
+    }
+    
     ColourPixels colourPix = ColourPalletes::Bit_3();
 
     std::vector<uint8_t> compressedData;

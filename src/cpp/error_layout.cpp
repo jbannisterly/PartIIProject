@@ -26,4 +26,13 @@ namespace ErrorLayout {
         return errorCorrectors;
     }
 
+    std::vector<ErrorCorrectionVirtual*> Bit_3_extra() {
+        std::vector<ErrorCorrectionVirtual*> errorCorrectors;
+        errorCorrectors.push_back(new ErrorCorrection<255, 128>());
+        errorCorrectors.push_back(new ErrorCorrection<255, 128>());
+        errorCorrectors.push_back(new ErrorCorrection<255, 128>());
+
+        return errorCorrectors;
+    }
+
 }

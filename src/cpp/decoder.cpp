@@ -19,8 +19,16 @@ int main(int argc, char *argv[]){
 
     std::string path = "output/img/output_align.png";
 
+    bool extraErrorCorrection = false;
+
     if (argc > 1) {
         path = std::string(argv[1]);
+    }
+    for (int i = 2; i < argc; i++) {
+        std::string currentArg = std::string(argv[i]);
+        if (currentArg == "-ec2") {
+            extraErrorCorrection = true;
+        }
     }
 
     try {
@@ -43,7 +51,12 @@ int main(int argc, char *argv[]){
         std::vector<uint8_t> rawData = writer.BarcodeToPixels(imageBytes, totalLength);
 
         ColourPixels colourPix = ColourPalletes::Bit_3();
-        std::vector<ErrorCorrectionVirtual*> errorCorrectors = ErrorLayout::Bit_3();
+        std::vector<ErrorCorrectionVirtual*> errorCorrectors;
+        if (extraErrorCorrection) {
+            errorCorrectors = ErrorLayout::Bit_3_extra();
+        } else {
+            errorCorrectors = ErrorLayout::Bit_3();
+        }
 
         int compressedLen = HeaderData::GetCompressedLen(rawData, colourPix, errorCorrectors[0]);
         bool compressionUsed = HeaderData::GetCompressedFlag(rawData, colourPix, errorCorrectors[0]);
