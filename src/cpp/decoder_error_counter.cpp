@@ -32,6 +32,9 @@ double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) 
 
 double MutualInformation(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) {
     std::array<double, 4> count = {0, 0, 0, 0};
+    std::array<int, 4> xIndex = {1, 0, 3, 2};
+    std::array<int, 4> yIndex = {2, 3, 0, 1};
+
     
     for (int i = 0; i < original.size(); i++) {
 
@@ -53,8 +56,8 @@ double MutualInformation(std::vector<uint8_t> &original, std::vector<uint8_t> &r
     double mi = 0;
 
     for (int i = 0; i < count.size(); i++) {
-        double px = (count[i] + count[(i + 1) % 4]) / total;
-        double py = (count[i] + count[(i + 2) % 4]) / total;
+        double px = (count[i] + count[xIndex[i]]) / total;
+        double py = (count[i] + count[yIndex[i]]) / total;
         double pxy = count[i] / total;
         if (pxy > 0) {
             mi += pxy * log2(pxy / px / py);
@@ -79,7 +82,7 @@ void RunTest(std::string path, int bitDepth) {
 
     std::vector<uint8_t> imageBytes = ImageAux::MatToBytes(image);
 
-    imageBytes = ColourCorrection::MethodQuartersAverage(imageBytes, layout, true);
+    // imageBytes = ColourCorrection::MethodAverage(imageBytes, layout, false);
 
     Mat correctedImage(image.rows, image.cols, CV_8UC3, imageBytes.data());
     imwrite("output/img/output_corrected.png", correctedImage);
