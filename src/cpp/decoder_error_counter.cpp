@@ -11,6 +11,7 @@
 #include "header_data.hpp"
 #include "random_data_gen.hpp"
 #include "colour_correction.hpp"
+#include <array>
 
 using namespace cv;
 
@@ -27,6 +28,40 @@ double Compare(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) 
     }
 
     return (double)count / original.size() / 8;
+}
+
+double MutualInformation(std::vector<uint8_t> &original, std::vector<uint8_t> &recovered) {
+    std::array<double, 4> count = {0, 0, 0, 0};
+    
+    for (int i = 0; i < original.size(); i++) {
+
+        for (int j = 0; j < 8; j++) {
+            int index  = 0;
+            if ((original[i] & (1 << j))) {
+                index += 1;
+            } 
+            if (recovered[i] & (1 << j)) {
+                index += 2;
+            }
+
+            count[index] += 1;
+        }
+    }
+
+    double total = count[0] + count[1] + count[2] + count[3];
+
+    double mi = 0;
+
+    for (int i = 0; i < count.size(); i++) {
+        double px = (count[i] + count[(i + 1) % 4]) / total;
+        double py = (count[i] + count[(i + 2) % 4]) / total;
+        double pxy = count[i] / total;
+        if (pxy > 0) {
+            mi += pxy * log2(pxy / px / py);
+        }
+    }
+
+    return mi;
 }
 
 void RunTest(std::string path, int bitDepth) {
@@ -68,8 +103,8 @@ void RunTest(std::string path, int bitDepth) {
     }
 
     double capacity = 0;
-    for (int i = 0; i < accuracy.size(); i++) {
-        capacity += 1 - ((1 - accuracy[i]) * 2);
+    for (int i = 0; i < trueData.size(); i++) {
+        capacity += (MutualInformation(trueData[i], recoveredData[i]));
     }
     std::cout << "\"" << path << "\"" << ":"  << capacity << "," << std::endl;
 
